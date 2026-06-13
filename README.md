@@ -36,10 +36,11 @@ Aplikacja nie wymaga żadnej instalacji, kompilacji ani serwera Node.js. Jest w 
 
 1. Sklonuj to repozytorium:
    ```bash
-   git clone https://github.com/TWOJ-USER/KOD-REPOZYTORIUM.git
+   git clone https://github.com/pliononek/KAWCIA.git
    ```
 2. Przejdź do katalogu projektu.
 3. Otwórz plik `index.html` w przeglądarce (np. dwukliknij albo użyj prostego serwera HTTP: `python3 -m http.server`).
+4. albo jeszcze 1 opcja netlify albo coś innego huj mnie to obchodzi jak to zrobisz
 
 ---
 
