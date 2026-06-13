@@ -43,7 +43,7 @@ Aplikacja stawia na **prywatność** – wszystkie Twoje dane są zapisywane wy�
 
 ## 🚀 Jak uruchomić?
 
-**Opcja 1 — Gotowy hosting (najprostsze)**
+**Opcja 1 — Github pages (najprostsze)**
 
 Wejdź na [https://pliononek.github.io/KAWCIA/) w Safari na iPhonie lub Chrome na Androidzie.
 
