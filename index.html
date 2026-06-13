@@ -281,12 +281,12 @@
   .active-wk-discard{background:rgba(0,0,0,.25);color:#fff;padding:12px 14px;border-radius:12px;font-size:13px;font-weight:600;transition:transform .12s,background .2s}
   .active-wk-discard:active{transform:scale(.94);background:rgba(0,0,0,.4)}
 
-  /* ===== floating pill (inne ekrany) ===== */
-  .active-pill{position:fixed;top:calc(8px + env(safe-area-inset-top));left:50%;transform:translateX(-50%) translateY(-150%);background:linear-gradient(135deg,var(--accent-start),var(--accent-end));color:#fff;padding:8px 16px 8px 12px;border-radius:999px;font-size:13px;font-weight:700;display:flex;align-items:center;gap:8px;z-index:60;box-shadow:0 8px 24px var(--glow);transition:transform .3s ease-out;cursor:pointer}
-  .active-pill.show{transform:translateX(-50%) translateY(0)}
-  .active-pill:active{transform:translateX(-50%) translateY(0) scale(.95)}
-  .active-pill-dot{width:8px;height:8px;border-radius:50%;background:#fff;animation:wkBlink 1.4s ease-in-out infinite}
-  .active-pill-time{font-variant-numeric:tabular-nums;background:rgba(0,0,0,.2);padding:3px 8px;border-radius:999px;font-size:12px}
+  
+  
+  
+  
+  
+  
 
   /* ===== workout templates ===== */
   .tpl-chips{display:flex;gap:10px;overflow-x:auto;padding:4px 4px 14px;scrollbar-width:none}
@@ -1144,11 +1144,7 @@
 </div>
 
 <!-- ============ ACTIVE WORKOUT PILL (poza ekranem Trening) ============ -->
-<div class="active-pill" id="activePill" data-testid="active-pill" onclick="showScreen('workout-active')">
-  <span class="active-pill-dot"></span>
-  <span>Trening trwa</span>
-  <span class="active-pill-time" id="activePillTime">0:00</span>
-</div>
+
 
 <div class="toast-wrap" id="toastWrap"></div>
 
@@ -2649,19 +2645,15 @@ function saveActiveWorkout(){
 function loadActiveWorkout(){
   try{
     const v = JSON.parse(sessionStorage.getItem('cw'));
-    if(v && v.w && v.ts && Array.isArray(v.w.exercises) && v.w.exercises.length > 0){
-      currentWorkout = v.w; workoutStartTs = v.ts; ensureLiveTimer();
-    } else {
-      sessionStorage.removeItem('cw');
-    }
-  }catch(e){ sessionStorage.removeItem('cw'); }
+    if(v && v.w){ currentWorkout = v.w; workoutStartTs = v.ts||Date.now(); ensureLiveTimer(); }
+  }catch(e){}
 }
 function stopWorkout(){
   if(workoutTimerInterval){ clearInterval(workoutTimerInterval); workoutTimerInterval=null; }
   currentWorkout=null; workoutStartTs=0;
   sessionStorage.removeItem('cw');
   stopRestTimer(true);
-  document.getElementById('activePill').classList.remove('show');
+  // pill removed
 }
 function ensureLiveTimer(){
   // globalny interval — działa nawet poza ekranem treningu, żeby pill miał aktualny czas
@@ -2681,7 +2673,7 @@ function renderActiveWorkout(){
 }
 function updateLiveTimers(){
   if(!currentWorkout || !workoutStartTs){
-    document.getElementById('activePill').classList.remove('show');
+    // pill removed
     return;
   }
   const s = Math.floor((Date.now()-workoutStartTs)/1000);
@@ -2689,10 +2681,10 @@ function updateLiveTimers(){
   const at = document.getElementById('wkActiveTimer');
   if(at) at.textContent = txt;
   document.querySelectorAll('.wk-timer').forEach(el=>el.textContent=txt);
-  document.getElementById('activePillTime').textContent = txt;
+  // pill removed
   // pokazuj pill tylko poza ekranami treningu
   const onWk = currentScreen==='workout-active' || currentScreen==='workout';
-  document.getElementById('activePill').classList.toggle('show', !onWk);
+  // pill removed
 }
 function renderActiveExercises(){
   const wrap = document.getElementById('wkActiveList');
