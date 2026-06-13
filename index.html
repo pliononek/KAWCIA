@@ -2649,8 +2649,12 @@ function saveActiveWorkout(){
 function loadActiveWorkout(){
   try{
     const v = JSON.parse(sessionStorage.getItem('cw'));
-    if(v && v.w){ currentWorkout = v.w; workoutStartTs = v.ts||Date.now(); ensureLiveTimer(); }
-  }catch(e){}
+    if(v && v.w && v.ts && Array.isArray(v.w.exercises) && v.w.exercises.length > 0){
+      currentWorkout = v.w; workoutStartTs = v.ts; ensureLiveTimer();
+    } else {
+      sessionStorage.removeItem('cw');
+    }
+  }catch(e){ sessionStorage.removeItem('cw'); }
 }
 function stopWorkout(){
   if(workoutTimerInterval){ clearInterval(workoutTimerInterval); workoutTimerInterval=null; }
