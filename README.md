@@ -27,7 +27,7 @@ Aplikacja stawia na **prywatność** – wszystkie Twoje dane są zapisywane wy�
 | OpenAI | gpt-4o-mini | [platform.openai.com](https://platform.openai.com) |
 | DeepSeek | deepseek-chat | [platform.deepseek.com](https://platform.deepseek.com) | | nie działa scanowanie jedzenia |
 | Anthropic Claude | claude-haiku-4-5 | [console.anthropic.com](https://console.anthropic.com) |
-| przy Deepseek nie dziala scanowanie jedzenia IA |
+ przy Deepseek nie dziala scanowanie jedzenia IA 
 ---
 
 ## 🔑 Jak uzyskać darmowy klucz API Gemini?
