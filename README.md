@@ -20,7 +20,7 @@ Aplikacja stawia na **prywatność** – wszystkie Twoje dane są zapisywane wy�
 ---
 
 ## 🤖 Obsługiwane modele AI
-przy Deepseek nie dziala scanowanie jedzenia IA 
+przy Deepseek nie dziala scanowanie jedzenia AI
 | Provider | Model | Klucz API |
 |---|---|---|
 | Google Gemini | gemini-1.5-flash | [aistudio.google.com](https://aistudio.google.com) |
