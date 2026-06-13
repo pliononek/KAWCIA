@@ -10,8 +10,6 @@ Aplikacja stawia na **prywatność (Privacy-First)** oraz **prostotę działania
 
 * **📊 Zaawansowany licznik kalorii i makroskładników:** Monitoruj spożycie kilokalorii (kcal) oraz podział na białka, węglowodany i tłuszcze w czasie rzeczywistym z czytelnym wskaźnikiem postępu.
 * **🏋️ Rejestr i kreator treningów:** Twórz własne plany treningowe, dodawaj ćwiczenia, serie oraz powtórzenia. Aplikacja posiada wbudowany stoper/timer do odmierzania czasu przerw i świętuje Twój sukces efektownym confetti po ukończeniu sesji!
-* **💧 Śledzenie nawodnienia:** Kontroluj dzienne spożycie wody za pomocą szybkich przycisków dodawania (np. szklanka/butelka).
-* **📈 Monitorowanie wagi:** Rejestruj swoją masę ciała i śledź zmiany w czasie.
 * **🔐 Prywatność i brak serwerów (Local-First):** Nie musisz zakładać konta ani się logować. Wszystkie dane są przechowywane w bezpieczny sposób bezpośrednio w pamięci podręcznej Twojej przeglądarki (`localStorage`).
 * **📱 Projekt Mobile-First i PWA:** Aplikacja została zoptymalizowana pod kątem smartfonów. Posiada konfigurację `viewport-fit=cover`, ikony Apple Touch Icon oraz minimalistyczny, nowoczesny interfejs przypominający aplikację natywną.
 * **🌙 Ciemny motyw (Dark Mode):** Stylowy, głęboki, mroczny interfejs oszczędzający baterię i wzrok podczas wieczornych wpisów.
