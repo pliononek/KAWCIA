@@ -15,6 +15,22 @@ Aplikacja stawia na **prywatność (Privacy-First)** oraz **prostotę działania
 * **🌙 Ciemny motyw (Dark Mode):** Stylowy, głęboki, mroczny interfejs oszczędzający baterię i wzrok podczas wieczornych wpisów.
 
 ---
+🔑 jak uzyskać klucz api gemini
+Google udostępnia klucze API poprzez platformę Google AI Studio. Proces jest darmowy (w ramach limitów programistycznych).
+
+Wejdź na stronę Google AI Studio.
+
+Zaloguj się swoim zwykłym kontem Google (Gmail).
+
+W lewym górnym rogu kliknij niebieski przycisk "Get API key" (Pobierz klucz API).
+
+Kliknij "Create API key" (Utwórz klucz API).
+
+Wybierz opcję "Create API key in a new project" (utworzy to nowy projekt w Google Cloud dla Twojego klucza) lub wybierz istniejący, jeśli już jakiś masz.
+
+Po chwili zobaczysz długi ciąg znaków (Twój klucz). Kliknij Copy, aby go skopiować.
+
+⚠️ BEZPIECZEŃSTWO: Zapisz ten klucz w bezpiecznym miejscu (np. w menedżerze haseł). Nigdy nikomu go nie pokazuj ani nie udostępniaj.
 
 ## 🛠️ Technologie
 
