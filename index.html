@@ -1489,54 +1489,15 @@ async function installUpdate(){
     for(const chunk of chunks){ allBytes.set(chunk, pos); pos += chunk.length; }
     const newHtml = new TextDecoder().decode(allBytes);
 
-    statusText.textContent = 'Zapisywanie…';
-    bar.style.width = '90%';
-    percent.textContent = '90%';
-
+    // zapisz wersję i HTML w localStorage
     localStorage.setItem('cal_currentVersion', _updateAvailable.version);
-
-    if('caches' in window){
-      try {
-        const cache = await caches.open('kawcia-v'+_updateAvailable.version);
-        const origin = location.origin;
-        const response = new Response(newHtml, {
-          headers: { 'Content-Type': 'text/html;charset=utf-8', 'X-KAWCIA-Version': _updateAvailable.version }
-        });
-        await cache.put(origin + '/', response.clone());
-        await cache.put(origin + '/index.html', response.clone());
-        await cache.put(origin, response.clone());
-        if(navigator.serviceWorker.controller){
-          navigator.serviceWorker.controller.postMessage({ type: 'UPDATE_READY', version: _updateAvailable.version });
-        }
-      } catch(e){}
-    }
+    localStorage.setItem('cal_updatedHtml', newHtml);
 
     bar.style.width = '100%';
     percent.textContent = '100%';
-    statusText.textContent = '✅ Zaktualizowano! Przeładowywanie…';
+    statusText.textContent = '✅ Gotowe! Przeładowywanie…';
 
-    setTimeout(() => {
-      if(navigator.serviceWorker.controller){
-        navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
-        setTimeout(() => location.reload(), 500);
-      } else {
-        const blob = new Blob([newHtml], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = 'index.html';
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-        prog.style.display = 'none';
-        installBtn.disabled = false;
-        installBtn.style.opacity = '1';
-        statusText.textContent = '✅ Pobrano! Otwórz nowy plik.';
-        toast('Pobrano! Otwórz pobrany plik index.html','success');
-        return;
-      }
-    }, 800);
+    setTimeout(() => location.reload(), 600);
 
   } catch(e){
     prog.style.display = 'none';
@@ -2212,68 +2173,16 @@ async function lookupBarcode(code){
   link.href = URL.createObjectURL(blob);
   document.head.appendChild(link);
 
-  // best-effort SW — obsługa cache i auto-update
+  // best-effort SW — tylko podstawowy cache offline
   if('serviceWorker' in navigator){
-    const swCode = `
-const CACHE = 'kawcia-v`+APP_VERSION+`';
-const FILES = ['/','/index.html'];
-self.addEventListener('install', e => {
-  e.waitUntil(
-    (async () => {
-      const cache = await caches.open(CACHE);
-      await cache.addAll(FILES);
-      await self.skipWaiting();
-    })()
-  );
-});
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    (async () => {
-      const keys = await caches.keys();
-      await Promise.all(keys.filter(k => k.startsWith('kawcia-') && k !== CACHE).map(k => caches.delete(k)));
-      await self.clients.claim();
-    })()
-  );
-});
-self.addEventListener('fetch', e => {
-  e.respondWith(
-    (async () => {
-      const cached = await caches.match(e.request);
-      if(cached) return cached;
-      try {
-        const res = await fetch(e.request);
-        const cache = await caches.open(CACHE);
-        if(e.request.method === 'GET') cache.put(e.request, res.clone());
-        return res;
-      } catch {
-        return cached || new Response('Offline', {status:503});
-      }
-    })()
-  );
-});
-self.addEventListener('message', e => {
-  if(e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
-  if(e.data && e.data.type === 'UPDATE_READY'){
-    self.skipWaiting();
-    self.clients.matchAll().then(clients => clients.forEach(c => c.postMessage({type:'RELOAD'})));
-  }
-});`;
+    const SW = `
+const C='kawcia-v`+APP_VERSION+`';
+self.addEventListener('install',e=>{e.waitUntil(caches.open(C).then(c=>c.addAll(['/','/index.html'])).then(()=>self.skipWaiting()))});
+self.addEventListener('activate',e=>{e.waitUntil(caches.keys().then(k=>Promise.all(k.filter(x=>x!==C).map(x=>caches.delete(x)))).then(()=>self.clients.claim()))});
+self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request).then(r=>{const c=caches.open(C).then(ca=>{if(e.request.method==='GET')ca.put(e.request,r.clone())});return r}).catch(()=>caches.match(e.request)||new Response('Offline',{status:503}))))});`;
     try{
-      const swBlob = new Blob([swCode],{type:'application/javascript'});
-      const swUrl = URL.createObjectURL(swBlob);
-      navigator.serviceWorker.register(swUrl).then(reg => {
-        reg.addEventListener('updatefound', () => {
-          const newSW = reg.installing;
-          newSW.addEventListener('statechange', () => {
-            if(newSW.state === 'installed' && navigator.serviceWorker.controller){}
-          });
-        });
-        if(navigator.serviceWorker.controller){
-          navigator.serviceWorker.addEventListener('message', e => {
-            if(e.data && e.data.type === 'RELOAD') location.reload();
-          });
-        }
-      }).catch(()=>{});
+      const b=new Blob([SW],{type:'application/javascript'});
+      navigator.serviceWorker.register(URL.createObjectURL(b)).catch(()=>{});
     }catch(e){}
   }
 })();
@@ -3520,6 +3429,15 @@ function unlockSecretKunicki(){
 /* =================== INIT =================== */
 (async function init(){
   // SPRAWDŹ CZY CZEKA AKTUALIZACJA — podmiana całej strony na nowy HTML
+  const pendingHtml = localStorage.getItem('cal_updatedHtml');
+  if(pendingHtml){
+    localStorage.removeItem('cal_updatedHtml');
+    document.open();
+    document.write(pendingHtml);
+    document.close();
+    return;
+  }
+
   const savedVer = localStorage.getItem('cal_currentVersion');
   const displayVer = savedVer || APP_VERSION;
 
