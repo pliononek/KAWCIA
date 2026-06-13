@@ -1216,7 +1216,7 @@ const LS = {
 };
 
 /* =================== UPDATE SYSTEM =================== */
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.19';
 const APP_REPO = 'pliononek/KAWCIA';
 const APP_RAW_URL = 'https://raw.githubusercontent.com/'+APP_REPO+'/main/index.html';
 const APP_API_RELEASES = 'https://api.github.com/repos/'+APP_REPO+'/releases/latest';
@@ -2501,6 +2501,12 @@ const EXERCISE_DB = [
   // POŚLADKI (1 nowe)
   {id:'single_leg_glute_bridge', nazwa:'Mostek jednonóż', grupy:['posladki'], pomocnicze:['brzuch'], sprzet:'ciezar_ciala', emoji:'🍑', opis:'Leżąc, jedna noga wyprostowana w górze. Unoszenie bioder z maksymalnym napięciem pośladków.'}
 
+  // === ĆWICZENIA Z FREE-EXERCISE-DB (dodane 2026-06-13, test aktualizacji) ===
+  {id:'quarter_situp', nazwa:'Pół brzuszek (3/4 Sit-Up)', grupy:['brzuch'], pomocnicze:[], sprzet:'ciezar_ciala', emoji:'🧱', opis:'Połóż się na podłodze z nogami ugiętymi w kolanach. Unieś tułów w 3/4 zakresu, napinając brzuch, powróć do pozycji wyjściowej.'},
+  {id:'ankle_circles', nazwa:'Krążenia stóp (Ankle Circles)', grupy:['lydki'], pomocnicze:[], sprzet:'ciezar_ciala', emoji:'🦵', opis:'Stań na jednej nodze, drugą unieś kilka centymetrów nad ziemię. Wykonuj duże krążenia stopą.'},
+  {id:'arm_circles', nazwa:'Krążenia ramion (Arm Circles)', grupy:['barki'], pomocnicze:[], sprzet:'ciezar_ciala', emoji:'🎯', opis:'Wyprostuj ramiona na boki równolegle do podłogi. Wykonuj małe krążenia do przodu i do tyłu.'},
+  {id:'around_the_worlds_db', nazwa:'Krążenia hantlami (Around The Worlds)', grupy:['klatka'], pomocnicze:['barki'], sprzet:'hantle', emoji:'💪', opis:'Leżąc na ławce płaskiej, hantle nad udami. Prowadź je po łuku nad głowę i z powrotem, lekko ugięte łokcie.'},
+  {id:'balance_board', nazwa:'Balans na desce (Balance Board)', grupy:['lydki'], pomocnicze:['nogi'], sprzet:'inne', emoji:'🦵', opis:'Stań na desce do balansu. Staraj się utrzymać równowagę przez jak najdłuższy czas.'}
 ];
 
 function getCustomExercises(){ try{return JSON.parse(localStorage.getItem(LS.customEx))||[]}catch(e){return[]} }
