@@ -926,6 +926,44 @@
       Eksportuj historię do CSV
     </button>
     <div style="height:10px"></div>
+
+    <div class="card">
+      <div class="section-title" style="margin-top:0">Aktualizacje</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0;font-size:13px;color:#7a7a8c">
+        <span>Obecna wersja</span>
+        <span style="color:#fff;font-weight:700" id="currentVersionDisplay">v1.0.0</span>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:4px 0 12px;font-size:13px;color:#7a7a8c">
+        <span>Najnowsza wersja</span>
+        <span style="color:#fff;font-weight:700" id="latestVersionDisplay">—</span>
+      </div>
+      <div class="row-toggle">
+        <div class="row-toggle-label">Auto-aktualizacja przy starcie</div>
+        <div class="toggle on" id="tgAutoUpdate" data-testid="tg-autoupdate" onclick="toggleClick(this);saveAutoUpdateToggle()"></div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-secondary" style="flex:1" data-testid="check-updates-btn" onclick="checkForUpdates()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg>
+          Sprawdź
+        </button>
+        <button class="btn btn-primary" style="flex:1;display:none" id="installUpdateBtn" data-testid="install-update-btn" onclick="installUpdate()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Zainstaluj
+        </button>
+      </div>
+      <div id="updateProgress" style="display:none;margin-top:12px">
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:#7a7a8c;margin-bottom:6px">
+          <span id="updateStatusText">Pobieranie…</span>
+          <span id="updatePercent">0%</span>
+        </div>
+        <div style="height:6px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden">
+          <div id="updateProgressBar" style="height:100%;width:0%;background:linear-gradient(90deg,var(--accent-start),var(--accent-end));border-radius:3px;transition:width .3s"></div>
+        </div>
+      </div>
+      <div id="updateChangelog" style="display:none;margin-top:10px;padding:10px;background:var(--accent-soft);border-radius:10px;font-size:12px;color:var(--accent-text);line-height:1.4;white-space:pre-wrap"></div>
+    </div>
+
+    <div style="height:10px"></div>
     <button class="btn btn-ghost" data-testid="clear-data-btn" onclick="clearAllData()">Wyczyść wszystkie dane</button>
     <div style="height:80px"></div>
   </section>
@@ -1037,7 +1075,7 @@
       </div>
     </div>
   </div>
-  <div class="drawer-version">KAWCIA · v1.0.0 <span style="opacity:.08;cursor:pointer;padding:0 6px;font-size:13px" data-testid="secret-btn" onclick="unlockSecretKunicki()" aria-label="?">🍆</span></div>
+  <div class="drawer-version">KAWCIA · v<span id="drawerVersion">1.0.0</span> <span style="opacity:.08;cursor:pointer;padding:0 6px;font-size:13px" data-testid="secret-btn" onclick="unlockSecretKunicki()" aria-label="?">🍆</span></div>
 </div>
 
 <!-- ============ REST TIMER ============ -->
@@ -1172,6 +1210,13 @@ const LS = {
   prPrefix: 'pr_'
 };
 
+/* =================== UPDATE SYSTEM =================== */
+const APP_VERSION = '1.0.0';
+const APP_REPO = 'pliononek/KAWCIA';
+const APP_RAW_URL = 'https://raw.githubusercontent.com/'+APP_REPO+'/main/index.html';
+const APP_API_RELEASES = 'https://api.github.com/repos/'+APP_REPO+'/releases/latest';
+const LS_AUTO_UPDATE = 'cal_autoUpdate';
+
 function getSettings(){
   try { return JSON.parse(localStorage.getItem(LS.settings)) || {}; } catch(e){ return {}; }
 }
@@ -1287,6 +1332,10 @@ function loadSettingsForm(){
   document.getElementById('restDur').value = String(s.restDur||90);
   document.getElementById('tgSound').classList.toggle('on', s.restSound!==false);
   document.getElementById('tgVibe').classList.toggle('on', s.restVibe!==false);
+  const au = localStorage.getItem(LS_AUTO_UPDATE);
+  document.getElementById('tgAutoUpdate').classList.toggle('on', au!=='false');
+  const savedVer = localStorage.getItem('cal_currentVersion');
+  document.getElementById('currentVersionDisplay').textContent = 'v' + (savedVer || APP_VERSION);
   // mark active theme
   const th = getTheme();
   document.querySelectorAll('.theme-card').forEach(el=>{
@@ -1329,6 +1378,194 @@ function clearAllData(){
   applyTheme('purple');
   toast('Dane wyczyszczone','success');
   setTimeout(()=>{ location.reload(); }, 600);
+}
+
+function saveAutoUpdateToggle(){
+  const on = document.getElementById('tgAutoUpdate').classList.contains('on');
+  localStorage.setItem(LS_AUTO_UPDATE, on ? 'true' : 'false');
+  toast(on ? 'Auto-aktualizacja włączona' : 'Auto-aktualizacja wyłączona', 'info');
+}
+
+/* =================== UPDATE SYSTEM =================== */
+let _updateAvailable = null; // { version, html, changelog }
+
+function _verCmp(a, b){
+  const pa = String(a).split('.').map(Number);
+  const pb = String(b).split('.').map(Number);
+  for(let i=0;i<Math.max(pa.length,pb.length);i++){
+    const na = pa[i]||0, nb = pb[i]||0;
+    if(na>nb) return 1;
+    if(na<nb) return -1;
+  }
+  return 0;
+}
+
+async function checkForUpdates(quiet=false){
+  const btn = document.querySelector('[data-testid="check-updates-btn"]');
+  const installBtn = document.getElementById('installUpdateBtn');
+  const chLog = document.getElementById('updateChangelog');
+  const statusEl = document.getElementById('latestVersionDisplay');
+  const prog = document.getElementById('updateProgress');
+  prog.style.display = 'none';
+  chLog.style.display = 'none';
+  installBtn.style.display = 'none';
+  if(btn) btn.textContent = 'Sprawdzanie…';
+
+  try {
+    // 1) pobierz najnowszy release z GitHub API
+    const res = await fetch(APP_API_RELEASES, {
+      headers: { 'Accept': 'application/vnd.github.v3+json' },
+      signal: AbortSignal.timeout(10000)
+    });
+    if(!res.ok) throw new Error('GitHub API: '+res.status);
+    const data = await res.json();
+    const latestTag = data.tag_name || '';
+    const latestName = data.name || latestTag;
+    // wyciągnij numer wersji z nazwy release (np. "KAWCIA app 1.15" → "1.15")
+    const verMatch = latestName.match(/(\d+\.\d+)/);
+    const latestVer = verMatch ? verMatch[1] : latestTag;
+    statusEl.textContent = 'v'+latestVer;
+
+    // 2) porównaj wersje
+    const curVer = localStorage.getItem('cal_currentVersion') || APP_VERSION;
+    if(_verCmp(latestVer, curVer) > 0){
+      _updateAvailable = { version: latestVer, changelog: data.body || '' };
+      installBtn.style.display = 'flex';
+      if(data.body){
+        chLog.textContent = '📝 Co nowego:\n' + data.body.slice(0, 500);
+        chLog.style.display = 'block';
+      }
+      if(!quiet) toast('Dostępna wersja v'+latestVer+'!','success');
+    } else {
+      _updateAvailable = null;
+      if(!quiet) toast('Masz najnowszą wersję ✓','success');
+    }
+  } catch(e){
+    statusEl.textContent = 'błąd';
+    if(!quiet) toast('Nie można sprawdzić: '+e.message,'error');
+  } finally {
+    if(btn) btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 4 23 10 17 10"/><path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"/></svg> Sprawdź';
+  }
+}
+
+async function installUpdate(){
+  if(!_updateAvailable){ toast('Brak aktualizacji do zainstalowania','error'); return; }
+  const installBtn = document.getElementById('installUpdateBtn');
+  const prog = document.getElementById('updateProgress');
+  const statusText = document.getElementById('updateStatusText');
+  const percent = document.getElementById('updatePercent');
+  const bar = document.getElementById('updateProgressBar');
+
+  installBtn.disabled = true;
+  installBtn.style.opacity = '.5';
+  prog.style.display = 'block';
+  statusText.textContent = 'Pobieranie nowej wersji…';
+
+  try {
+    // 1) pobierz nowy HTML przez fetch z progressem
+    const resp = await fetch(APP_RAW_URL, { signal: AbortSignal.timeout(30000) });
+    if(!resp.ok) throw new Error('HTTP '+resp.status);
+    const reader = resp.body.getReader();
+    const contentLength = parseInt(resp.headers.get('Content-Length') || '0') || 250000;
+    let received = 0;
+    const chunks = [];
+    while(true){
+      const { done, value } = await reader.read();
+      if(done) break;
+      chunks.push(value);
+      received += value.length;
+      const pct = Math.min(100, Math.round((received / contentLength) * 100));
+      bar.style.width = pct + '%';
+      percent.textContent = pct + '%';
+    }
+    const allBytes = new Uint8Array(received);
+    let pos = 0;
+    for(const chunk of chunks){ allBytes.set(chunk, pos); pos += chunk.length; }
+    const newHtml = new TextDecoder().decode(allBytes);
+
+    statusText.textContent = 'Zapisywanie…';
+    bar.style.width = '90%';
+    percent.textContent = '90%';
+
+    // 2) zapamiętaj wersję
+    localStorage.setItem('cal_currentVersion', _updateAvailable.version);
+
+    // 3) zapisz do cache Service Worker (dla GitHub Pages)
+    if('caches' in window){
+      try {
+        const cache = await caches.open('kawcia-v'+_updateAvailable.version);
+        const origin = location.origin;
+        const response = new Response(newHtml, {
+          headers: { 'Content-Type': 'text/html;charset=utf-8', 'X-KAWCIA-Version': _updateAvailable.version }
+        });
+        await cache.put(origin + '/', response.clone());
+        await cache.put(origin + '/index.html', response.clone());
+        // też dla samego origin bez trailing slash
+        await cache.put(origin, response.clone());
+
+        // powiadom SW o nowej wersji
+        if(navigator.serviceWorker.controller){
+          navigator.serviceWorker.controller.postMessage({ type: 'UPDATE_READY', version: _updateAvailable.version });
+        }
+      } catch(e){ /* cache może nie działać na file:// */ }
+    }
+
+    bar.style.width = '100%';
+    percent.textContent = '100%';
+    statusText.textContent = '✅ Zaktualizowano! Przeładowywanie…';
+
+    // 4) przeładuj – dla hosted PWA użyj SW
+    setTimeout(() => {
+      if(navigator.serviceWorker.controller){
+        navigator.serviceWorker.controller.postMessage({ type: 'SKIP_WAITING' });
+        setTimeout(() => location.reload(), 500);
+      } else {
+        // lokalny plik – pobierz nową wersję jako plik
+        const blob = new Blob([newHtml], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'index.html';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 1000);
+        prog.style.display = 'none';
+        installBtn.disabled = false;
+        installBtn.style.opacity = '1';
+        statusText.textContent = '✅ Pobrano! Otwórz nowy plik.';
+        toast('Pobrano! Otwórz pobrany plik index.html','success');
+        return;
+      }
+    }, 800);
+
+  } catch(e){
+    prog.style.display = 'none';
+    installBtn.disabled = false;
+    installBtn.style.opacity = '1';
+    toast('Błąd aktualizacji: '+e.message,'error');
+  }
+}
+
+// auto-update przy starcie
+async function autoUpdateCheck(){
+  if(localStorage.getItem(LS_AUTO_UPDATE) === 'false') return;
+  try {
+    const res = await fetch(APP_API_RELEASES, {
+      headers: { 'Accept': 'application/vnd.github.v3+json' },
+      signal: AbortSignal.timeout(8000)
+    });
+    if(!res.ok) return;
+    const data = await res.json();
+    const verMatch = (data.name||'').match(/(\d+\.\d+)/);
+    const latestVer = verMatch ? verMatch[1] : '';
+    if(!latestVer) return;
+    const curVer = localStorage.getItem('cal_currentVersion') || APP_VERSION;
+    if(_verCmp(latestVer, curVer) > 0){
+      _updateAvailable = { version: latestVer, changelog: data.body || '' };
+      toast('Dostępna aktualizacja v'+latestVer+' — wejdź w Ustawienia','info');
+    }
+  } catch(e){ /* cicho */ }
 }
 
 /* =================== COUNTUP =================== */
@@ -1976,13 +2213,72 @@ async function lookupBarcode(code){
   link.href = URL.createObjectURL(blob);
   document.head.appendChild(link);
 
-  // best-effort SW
+  // best-effort SW — obsługa cache i auto-update
   if('serviceWorker' in navigator){
-    const swCode = `self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>self.clients.claim());self.addEventListener('fetch',e=>{});`;
+    const swCode = `
+const CACHE = 'kawcia-v`+APP_VERSION+`';
+const FILES = ['/','/index.html'];
+self.addEventListener('install', e => {
+  e.waitUntil(
+    (async () => {
+      const cache = await caches.open(CACHE);
+      await cache.addAll(FILES);
+      await self.skipWaiting();
+    })()
+  );
+});
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    (async () => {
+      const keys = await caches.keys();
+      await Promise.all(keys.filter(k => k.startsWith('kawcia-') && k !== CACHE).map(k => caches.delete(k)));
+      await self.clients.claim();
+    })()
+  );
+});
+self.addEventListener('fetch', e => {
+  e.respondWith(
+    (async () => {
+      const cached = await caches.match(e.request);
+      if(cached) return cached;
+      try {
+        const res = await fetch(e.request);
+        const cache = await caches.open(CACHE);
+        if(e.request.method === 'GET') cache.put(e.request, res.clone());
+        return res;
+      } catch {
+        return cached || new Response('Offline', {status:503});
+      }
+    })()
+  );
+});
+self.addEventListener('message', e => {
+  if(e.data && e.data.type === 'SKIP_WAITING') self.skipWaiting();
+  if(e.data && e.data.type === 'UPDATE_READY'){
+    // pobierz nowy HTML z cache i wymuś odświeżenie
+    self.skipWaiting();
+    self.clients.matchAll().then(clients => clients.forEach(c => c.postMessage({type:'RELOAD'})));
+  }
+});`;
     try{
       const swBlob = new Blob([swCode],{type:'application/javascript'});
       const swUrl = URL.createObjectURL(swBlob);
-      navigator.serviceWorker.register(swUrl).catch(()=>{});
+      navigator.serviceWorker.register(swUrl).then(reg => {
+        reg.addEventListener('updatefound', () => {
+          const newSW = reg.installing;
+          newSW.addEventListener('statechange', () => {
+            if(newSW.state === 'installed' && navigator.serviceWorker.controller){
+              // nowa wersja SW jest gotowa
+            }
+          });
+        });
+        // nasłuchuj wiadomości od SW
+        if(navigator.serviceWorker.controller){
+          navigator.serviceWorker.addEventListener('message', e => {
+            if(e.data && e.data.type === 'RELOAD') location.reload();
+          });
+        }
+      }).catch(()=>{});
     }catch(e){}
   }
 })();
@@ -2246,7 +2542,61 @@ const EXERCISE_DB = [
   {id:'jumprope', nazwa:'Skakanka', grupy:['cardio'], pomocnicze:['lydki'], sprzet:'inne', emoji:'🏃', opis:'Spalanie kalorii w krótkim czasie, koordynacja, łydki.'},
   {id:'burpee', nazwa:'Burpee', grupy:['cardio'], pomocnicze:['klatka','nogi'], sprzet:'ciezar_ciala', emoji:'🏃', opis:'Przysiad → deska → pompka → wyskok. Pełne ciało.'},
   {id:'jumpjack', nazwa:'Pajacyki (jumping jack)', grupy:['cardio'], pomocnicze:[], sprzet:'ciezar_ciala', emoji:'🏃', opis:'Rozgrzewka lub interwał. Klaśnij nad głową i rozstaw nogi.'},
-  {id:'rower', nazwa:'Wioślarz (rowing machine)', grupy:['cardio'], pomocnicze:['plecy','nogi'], sprzet:'maszyna', emoji:'🏃', opis:'Sekwencja: nogi → plecy → ramiona, powrót w odwrotnej kolejności.'}
+  {id:'rower', nazwa:'Wioślarz (rowing machine)', grupy:['cardio'], pomocnicze:['plecy','nogi'], sprzet:'maszyna', emoji:'🏃', opis:'Sekwencja: nogi → plecy → ramiona, powrót w odwrotnej kolejności.'},
+
+  // === ĆWICZENIA Z FREE-EXERCISE-DB (dodane 2026-06-14) ===
+  // KLATKA (6 nowych)
+  {id:'svend_press', nazwa:'Wyciskanie Svenda', grupy:['klatka'], pomocnicze:[], sprzet:'inne', emoji:'💪', opis:'Stań prosto, ścisnij oburącz talerz lub mały ciężar przed klatką. Wyciskaj prosto przed siebie, napinając klatkę.'},
+  {id:'incline_db_press', nazwa:'Wyciskanie hantli na skosie', grupy:['klatka'], pomocnicze:['barki','triceps'], sprzet:'hantle', emoji:'💪', opis:'Ławka ustawiona pod kątem 30–45°. Wyciskaj hantle z pełnym zakresem ruchu, opuszczając niżej niż przy sztandze.'},
+  {id:'decline_db_flyes', nazwa:'Rozpiętki z hantlami na ujemnym skosie', grupy:['klatka'], pomocnicze:[], sprzet:'hantle', emoji:'💪', opis:'Głowa niżej niż stopy. Kontrolowane rozpiętki z pełnym rozciągnięciem klatki.'},
+  {id:'low_cable_crossover', nazwa:'Crossover z wyciągu od dołu', grupy:['klatka'], pomocnicze:[], sprzet:'kable', emoji:'💪', opis:'Kable ustawione nisko. Ruch skierowany ku górze, napinając górne pasma klatki.'},
+  {id:'incline_cable_flye', nazwa:'Rozpiętki na wyciągu na skosie', grupy:['klatka'], pomocnicze:[], sprzet:'kable', emoji:'💪', opis:'Stałe napięcie przez cały zakres ruchu. Doskonała izolacja klatki na skosie.'},
+  {id:'db_pullover', nazwa:'Pullover z hantlem', grupy:['klatka'], pomocnicze:['plecy'], sprzet:'hantle', emoji:'💪', opis:'Leżąc prostopadle na ławce, opuść hantel za głowę z lekko ugiętymi ramionami, następnie wróć do pozycji wyjściowej.'},
+
+  // PLECY (3 nowe)
+  {id:'wide_grip_lat_pulldown', nazwa:'Ściąganie drążka szerokim chwytem', grupy:['plecy'], pomocnicze:['biceps'], sprzet:'kable', emoji:'🔙', opis:'Chwyt na szerokość ramion lub szerszy. Ściągaj drążek do górnej klatki, prowadząc łokcie w dół i do tyłu.'},
+  {id:'close_grip_lat_pulldown', nazwa:'Ściąganie drążka wąskim chwytem', grupy:['plecy'], pomocnicze:['biceps'], sprzet:'kable', emoji:'🔙', opis:'Wąski chwyt podchwytem. Mocniejsza aktywacja dolnych części mięśni najszerszych.'},
+  {id:'straight_arm_pulldown', nazwa:'Pulldown prostymi ramionami', grupy:['plecy'], pomocnicze:[], sprzet:'kable', emoji:'🔙', opis:'Lekki wyciąg z linką lub drążkiem. Proste ramiona prowadź w dół przy użyciu tylko pleców.'},
+
+  // NOGI (5 nowych)
+  {id:'front_squat', nazwa:'Przysiad przedni', grupy:['nogi'], pomocnicze:['posladki','plecy'], sprzet:'sztanga', emoji:'🦵', opis:'Sztanga spoczywa na przednich deltach. Bardziej pionowa sylwetka, maksymalne obciążenie czworogłowych.'},
+  {id:'hack_squat_bb', nazwa:'Hack squat ze sztangą', grupy:['nogi'], pomocnicze:[], sprzet:'sztanga', emoji:'🦵', opis:'Sztanga za plecami, dłonie z tyłu. Przysiad z wyprostowaną sylwetką, mocne napięcie na udach.'},
+  {id:'leg_press_machine', nazwa:'Wypychanie na suwnicy', grupy:['nogi'], pomocnicze:['posladki'], sprzet:'maszyna', emoji:'🦵', opis:'Stopy na platformie na szerokość barków. Pełny zakres ruchu bez odrywania pleców od oparcia.'},
+  {id:'walking_lunge', nazwa:'Wykroki w marszu ze sztangą', grupy:['nogi'], pomocnicze:['posladki'], sprzet:'sztanga', emoji:'🦵', opis:'Sztanga na barkach. Krok do przodu, tylne kolano blisko podłogi. Ruch marszowy naprzemiennie.'},
+  {id:'box_squat', nazwa:'Box squat', grupy:['nogi'], pomocnicze:['posladki'], sprzet:'sztanga', emoji:'🦵', opis:'Przysiad na skrzynkę lub ławkę. Uczy eksplozywności i kontroli w dolnej fazie ruchu.'},
+
+  // BARKI (5 nowych)
+  {id:'seated_bb_military', nazwa:'Wyciskanie żołnierskie siedząc', grupy:['barki'], pomocnicze:['triceps'], sprzet:'sztanga', emoji:'🎯', opis:'Oparte plecy. Wyciskanie sztangi zza głowy, pełna kontrola bez bujania.'},
+  {id:'standing_db_press', nazwa:'Wyciskanie hantli stojąc', grupy:['barki'], pomocnicze:['triceps'], sprzet:'hantle', emoji:'🎯', opis:'Stabilizacja tułowia, hantle wyciskane nad głowę z rotacją nadgarstków.'},
+  {id:'cable_rear_delt_fly', nazwa:'Rozpiętki tylnych delt na wyciągu', grupy:['barki'], pomocnicze:[], sprzet:'kable', emoji:'🎯', opis:'Kable skrzyżowane przed sobą. Rozkładaj ramiona na boki, ściskając tylne aktony barków.'},
+  {id:'front_db_raise', nazwa:'Wznosy hantli przed siebie', grupy:['barki'], pomocnicze:[], sprzet:'hantle', emoji:'🎯', opis:'Hantle unoszone naprzemiennie lub oburącz do wysokości oczu. Akcent na przedni akton barku.'},
+  {id:'cuban_press', nazwa:'Cuban press', grupy:['barki'], pomocnicze:['triceps'], sprzet:'hantle', emoji:'🎯', opis:'Wznosy bokiem → obrót → wyciskanie. Kompleksowe ćwiczenie rotatorów i całego barku.'},
+
+  // BICEPS (4 nowe)
+  {id:'concentration_curl', nazwa:'Uginania koncentracyjne', grupy:['biceps'], pomocnicze:[], sprzet:'hantle', emoji:'💪', opis:'Ramię oparte o wewnętrzną stronę uda. Izolacja dwugłowego z pełną koncentracją na skurczu.'},
+  {id:'incline_db_curl', nazwa:'Uginanie hantli na skosie', grupy:['biceps'], pomocnicze:[], sprzet:'hantle', emoji:'💪', opis:'Ławka pod kątem ~45°. Ramiona za tułowiem, maksymalne rozciągnięcie bicepsa.'},
+  {id:'spider_curl', nazwa:'Uginanie Spider', grupy:['biceps'], pomocnicze:[], sprzet:'sztanga', emoji:'💪', opis:'Klatka na ławce skośnej (głową w dół). Uginanie ze sztangą EZ, pico napięcie w skurczu.'},
+  {id:'cross_body_hammer', nazwa:'Uginanie młotkowe przez tułów', grupy:['biceps'], pomocnicze:['przedramiona'], sprzet:'hantle', emoji:'💪', opis:'Chwyt neutralny. Hantel prowadzony w kierunku przeciwnego barku. Aktywacja ramiennego.'},
+
+  // TRICEPS (4 nowe)
+  {id:'lying_triceps_press', nazwa:'Wyciskanie francuskie leżąc', grupy:['triceps'], pomocnicze:[], sprzet:'sztanga', emoji:'💪', opis:'Leżąc na ławce płaskiej. Sztanga EZ opuszczana za głowę, wyprost wyłącznie w łokciach.'},
+  {id:'bench_dips', nazwa:'Dipsy na ławce', grupy:['triceps'], pomocnicze:['klatka'], sprzet:'ciezar_ciala', emoji:'💪', opis:'Dłonie na ławce za plecami, nogi wyprostowane lub ugięte. Pionowy ruch, łokcie do tyłu.'},
+  {id:'db_kickback', nazwa:'Kickback z hantlem', grupy:['triceps'], pomocnicze:[], sprzet:'hantle', emoji:'💪', opis:'Pochylony tułów. Ramię równoległe do podłogi, prostowanie przedramienia z pauzą w skurczu.'},
+  {id:'smith_close_grip', nazwa:'Wyciskanie wąskim chwytem na Smitha', grupy:['triceps'], pomocnicze:['klatka'], sprzet:'maszyna', emoji:'💪', opis:'Wąski chwyt na belce Smitha. Łokcie przy tułowiu, wyciskanie z pełnym wyprostem łokci.'},
+
+  // BRZUCH (4 nowe)
+  {id:'hanging_leg_raise', nazwa:'Unoszenie nóg w zwisie', grupy:['brzuch'], pomocnicze:[], sprzet:'ciezar_ciala', emoji:'🧱', opis:'Zwis na drążku. Unoszenie prostych nóg do poziomu bioder lub wyżej. Kontrolowane opuszczanie.'},
+  {id:'cable_crunch', nazwa:'Wyciskanie brzucha na wyciągu', grupy:['brzuch'], pomocnicze:[], sprzet:'kable', emoji:'🧱', opis:'Klęk, linka za głową. Zwijanie tułowia, napinając brzuch. Nie ciągnij rękoma.'},
+  {id:'ab_crunch_machine', nazwa:'Wyciskanie brzucha na maszynie', grupy:['brzuch'], pomocnicze:[], sprzet:'maszyna', emoji:'🧱', opis:'Siedząc lub klęcząc na maszynie. Kontrolowany skurcz brzucha z obciążeniem.'},
+  {id:'pallof_press', nazwa:'Pallof press', grupy:['brzuch'], pomocnicze:[], sprzet:'kable', emoji:'🧱', opis:'Kabel bocznie. Wyciskanie przed siebie z oporem rotacji. Doskonałe na stabilizację tułowia.'},
+
+  // ŁYDKI (2 nowe)
+  {id:'standing_calf_raises', nazwa:'Wspięcia na palce stojąc', grupy:['lydki'], pomocnicze:[], sprzet:'maszyna', emoji:'🦵', opis:'Maszyna lub wolny ciężar. Pełny zakres ruchu – głębokie rozciągnięcie i pełne wspięcie.'},
+  {id:'bb_seated_calf', nazwa:'Wspięcia na palce siedząc ze sztangą', grupy:['lydki'], pomocnicze:[], sprzet:'sztanga', emoji:'🦵', opis:'Sztanga na kolanach, poduszki pod kolana. Izolacja płaszczkowatych łydek.'},
+
+  // POŚLADKI (1 nowe)
+  {id:'single_leg_glute_bridge', nazwa:'Mostek jednonóż', grupy:['posladki'], pomocnicze:['brzuch'], sprzet:'ciezar_ciala', emoji:'🍑', opis:'Leżąc, jedna noga wyprostowana w górze. Unoszenie bioder z maksymalnym napięciem pośladków.'}
+
 ];
 
 function getCustomExercises(){ try{return JSON.parse(localStorage.getItem(LS.customEx))||[]}catch(e){return[]} }
@@ -3173,9 +3523,14 @@ function unlockSecretKunicki(){
 }
 
 /* =================== INIT =================== */
-(function init(){
+(async function init(){
+  // odczytaj wersję z localStorage (nadpisuje APP_VERSION po aktualizacji)
+  const savedVer = localStorage.getItem('cal_currentVersion');
+  const displayVer = savedVer || APP_VERSION;
+
   applyTheme(getTheme());
   loadActiveWorkout();
+  document.getElementById('drawerVersion').textContent = displayVer;
   const name = getUserName();
   const s = getSettings();
   if(!name){
@@ -3188,6 +3543,8 @@ function unlockSecretKunicki(){
     updateGreeting();
     showScreen('home');
   }
+  // auto-update check po 3s (daje czas na załadowanie)
+  setTimeout(autoUpdateCheck, 3000);
 })();
 </script>
 </body>
