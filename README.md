@@ -45,7 +45,7 @@ Aplikacja stawia na **prywatność** – wszystkie Twoje dane są zapisywane wy�
 
 **Opcja 1 — Gotowy hosting (najprostsze)**
 
-Wejdź na [kawcia.netlify.app](https://kawcia.netlify.app) w Safari na iPhonie lub Chrome na Androidzie.
+Wejdź na [) w Safari na iPhonie lub Chrome na Androidzie.
 
 **Opcja 2 — Lokalnie**
 
