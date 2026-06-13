@@ -45,7 +45,7 @@ Aplikacja stawia na **prywatność** – wszystkie Twoje dane są zapisywane wy�
 
 **Opcja 1 — Gotowy hosting (najprostsze)**
 
-Wejdź na [) w Safari na iPhonie lub Chrome na Androidzie.
+Wejdź na [https://pliononek.github.io/KAWCIA/) w Safari na iPhonie lub Chrome na Androidzie.
 
 **Opcja 2 — Lokalnie**
 
