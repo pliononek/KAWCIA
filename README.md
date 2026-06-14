@@ -29,6 +29,8 @@ Aplikacja używa **Google Gemini** jako dostawcy AI. Klucz API jest darmowy.
 | gemini-2.5-flash | 5 | 20 | ✅ |
 | gemini-2.5-flash-lite | 10 | 20 | ✅ |
 
+> ❗nie dodawałem gpt ani antropic ponieważ za dużo błędów było z nimi a gemini api jest darmowe wiec dla przeciętnego użytkownika to wystarczy
+
 > 💡 Aplikacja automatycznie zaczyna od **gemini-3.1-flash-lite** — najszybszy i najwięcej darmowych zapytań dziennie (500/dzień).
 
 ---
