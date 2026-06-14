@@ -2174,25 +2174,13 @@ async function startBarcode(){
   try{
     codeReader = new ZXing.BrowserMultiFormatReader();
     const video = document.getElementById('barcodeVideo');
-    const s = getSettings();
-    const lens = s.cameraLens || 'auto';
-
-    const devices = await ZXing.BrowserMultiFormatReader.listVideoInputDevices();
-    let deviceId = null;
-
-    // używaj domyślnej tylnej kamery
-    if(lens === 'wide'){
-      const found = devices.find(d => /wide|back|rear|environment/i.test(d.label));
-      if(found) deviceId = found.deviceId;
-    } else if(lens === 'tele'){
-      const found = devices.find(d => /tele|2x|zoom/i.test(d.label));
-      if(found) deviceId = found.deviceId;
-    }
-    // 'auto', 'ultrawide' lub nie znaleziono — deviceId zostaje null (domyślna tylna kamera)
-
-    codeReader.decodeFromVideoDevice(deviceId, video, (result, err)=>{
-      if(result){ const code = result.getText(); stopBarcode(); lookupBarcode(code); }
-    });
+    codeReader.decodeFromConstraints(
+      { video: { facingMode: { ideal: 'environment' } } },
+      video,
+      (result, err) => {
+        if(result){ const code = result.getText(); stopBarcode(); lookupBarcode(code); }
+      }
+    );
   }catch(e){
     toast('Brak dostępu do kamery: '+e.message,'error');
   }
