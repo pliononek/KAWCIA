@@ -61,7 +61,7 @@ Aplikacja używa **Google Gemini** jako dostawcy AI. Klucz API jest darmowy.
 
 **Krok 1** — Otwórz Safari i wejdź na:
 ```
-https://kawcia.netlify.app
+https://pliononek.github.io/KAWCIA/
 ```
 
 **Krok 2** — Na dole ekranu kliknij ikonkę **Udostępnij** (kwadrat ze strzałką skierowaną w górę ↑)
@@ -80,7 +80,7 @@ https://kawcia.netlify.app
 
 **Krok 1** — Otwórz Chrome i wejdź na:
 ```
-https://kawcia.netlify.app
+https://pliononek.github.io/KAWCIA/
 ```
 
 **Krok 2** — Kliknij trzy kropki ⋮ w prawym górnym rogu
@@ -93,7 +93,7 @@ https://kawcia.netlify.app
 
 ### 💻 Komputer (przeglądarka)
 
-Wejdź na [https://kawcia.netlify.app](https://kawcia.netlify.app) — działa od razu, bez instalacji.
+Wejdź na [https://pliononek.github.io/KAWCIA/) — działa od razu, bez instalacji.
 
 ---
 
