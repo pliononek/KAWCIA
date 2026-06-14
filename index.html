@@ -109,6 +109,7 @@
   .meal{display:flex;align-items:center;gap:12px;background:rgba(19,19,26,.7);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.05);border-radius:16px;padding:14px;margin-bottom:10px;animation:fadeInLeft .35s ease both}
   .meal.removing{animation:slideOutRight .25s ease forwards}
   .meal-emoji{width:42px;height:42px;border-radius:12px;background:linear-gradient(135deg,var(--accent-soft),var(--accent-soft));display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;border:1px solid var(--accent-border)}
+  .meal img.meal-food-img{width:42px;height:42px;border-radius:12px;object-fit:cover;flex-shrink:0;border:1px solid var(--accent-border)}
   .meal-info{flex:1;min-width:0}
   .meal-name{font-size:15px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .meal-macros{font-size:12px;color:#7a7a8c;margin-top:2px}
@@ -566,14 +567,14 @@
       <div class="mode-card-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h16v3"/><path d="M9 20h6"/><path d="M12 4v16"/></svg>
       </div>
-      <div class="mode-card-text"><h3>Wpisz nazwę</h3><p>AI oszacuje kalorie z opisu</p></div>
+      <div class="mode-card-text"><h3>Wpisz nazwę</h3><p>AI oszacuje kalorie z nazwy lub opisu</p></div>
     </button>
 
     <button class="mode-card" data-testid="mode-photo" onclick="showScreen('add-photo')">
       <div class="mode-card-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
       </div>
-      <div class="mode-card-text"><h3>Zrób zdjęcie</h3><p>AI rozpozna posiłek na fotce</p></div>
+      <div class="mode-card-text"><h3>Zrób zdjęcie</h3><p>AI rozpozna posiłek + wpisz gramy</p></div>
     </button>
 
     <button class="mode-card" data-testid="mode-barcode" onclick="openBarcode()">
@@ -587,7 +588,7 @@
       <div class="mode-card-icon">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="10" y2="10"/><line x1="12" y1="10" x2="14" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="10" y2="14"/><line x1="12" y1="14" x2="14" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="10" y2="18"/><line x1="12" y1="18" x2="14" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/></svg>
       </div>
-      <div class="mode-card-text"><h3>Ręcznie</h3><p>Wpisz kalorie i makro samodzielnie</p></div>
+      <div class="mode-card-text"><h3>Ręcznie</h3><p>Wpisz makro na 100g + ile gramów</p></div>
     </button>
   </section>
 
@@ -600,22 +601,43 @@
         <label class="label">Nazwa posiłku</label>
         <input class="input" id="manName" data-testid="manual-name" placeholder="np. kanapka z serem"/>
       </div>
-      <div class="field">
-        <label class="label">Kalorie (kcal) *</label>
-        <input class="input" id="manCal" data-testid="manual-cal" type="number" inputmode="numeric" placeholder="np. 350"/>
-      </div>
-      <div class="row-3">
+      <div class="section-title" style="margin-top:4px;margin-bottom:8px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:#7a7a8c">Wartości na 100g produktu</div>
+      <div class="row-3" style="margin-bottom:4px">
+        <div class="field">
+          <label class="label">Kalorie</label>
+          <input class="input" id="manPer100Cal" data-testid="manual-per100-cal" type="number" inputmode="decimal" placeholder="250" oninput="updateManualPreview()"/>
+        </div>
         <div class="field">
           <label class="label">Białko (g)</label>
-          <input class="input" id="manP" data-testid="manual-p" type="number" inputmode="decimal" placeholder="0"/>
+          <input class="input" id="manPer100P" data-testid="manual-per100-p" type="number" inputmode="decimal" placeholder="10" oninput="updateManualPreview()"/>
         </div>
         <div class="field">
           <label class="label">Tłuszcze (g)</label>
-          <input class="input" id="manF" data-testid="manual-f" type="number" inputmode="decimal" placeholder="0"/>
+          <input class="input" id="manPer100F" data-testid="manual-per100-f" type="number" inputmode="decimal" placeholder="8" oninput="updateManualPreview()"/>
         </div>
+      </div>
+      <div class="row-3">
         <div class="field">
           <label class="label">Węgle (g)</label>
-          <input class="input" id="manC" data-testid="manual-c" type="number" inputmode="decimal" placeholder="0"/>
+          <input class="input" id="manPer100C" data-testid="manual-per100-c" type="number" inputmode="decimal" placeholder="30" oninput="updateManualPreview()"/>
+        </div>
+        <div class="field">
+          <label class="label">Ile gramów?</label>
+          <input class="input" id="manGrams" data-testid="manual-grams" type="number" inputmode="numeric" placeholder="150" oninput="updateManualPreview()"/>
+        </div>
+        <div class="field" style="display:flex;flex-direction:column;justify-content:flex-end">
+          <div class="portion-row" style="margin:0;gap:4px;grid-template-columns:repeat(3,1fr)" id="manGramsPresets">
+            <button class="portion-preset" data-mg="100" style="font-size:10px;padding:6px 4px" onclick="setManGrams(100)">100g</button>
+            <button class="portion-preset" data-mg="150" style="font-size:10px;padding:6px 4px" onclick="setManGrams(150)">150g</button>
+            <button class="portion-preset" data-mg="200" style="font-size:10px;padding:6px 4px" onclick="setManGrams(200)">200g</button>
+          </div>
+        </div>
+      </div>
+      <div id="manualPreviewBox" style="display:none;background:var(--accent-soft);border:1px solid var(--accent-border);border-radius:12px;padding:12px;margin:8px 0">
+        <div style="font-size:11px;color:#7a7a8c;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Podgląd porcji</div>
+        <div style="display:flex;justify-content:space-between;align-items:center">
+          <strong id="manPreviewCal" style="font-size:22px;color:var(--accent-text)">0 kcal</strong>
+          <span id="manPreviewMacros" style="font-size:12px;color:#7a7a8c"></span>
         </div>
       </div>
       <button class="btn btn-primary" data-testid="manual-submit-btn" onclick="submitManual()">
@@ -628,11 +650,15 @@
   <!-- ============ ADD: TEXT ============ -->
   <section id="screen-add-text" class="screen">
     <button class="back-btn" onclick="showScreen('add')">← Wróć</button>
-    <div class="header" style="padding-top:0"><h1>Opisz posiłek</h1></div>
+    <div class="header" style="padding-top:0"><h1>Wpisz nazwę</h1></div>
     <div class="card">
       <div class="field">
-        <label class="label">Co zjadłeś?</label>
-        <textarea class="textarea" id="textDesc" data-testid="text-desc-input" placeholder="np. owsianka z bananem i orzechami, 200g"></textarea>
+        <label class="label">Nazwa posiłku</label>
+        <input class="input" id="textName" data-testid="text-name-input" placeholder="np. Owsianka z bananem"/>
+      </div>
+      <div class="field">
+        <label class="label">Opis (opcjonalnie — AI dokładniej oszacuje)</label>
+        <textarea class="textarea" id="textDesc" data-testid="text-desc-input" placeholder="np. z orzechami i miodem, ok. 300g" style="min-height:80px"></textarea>
       </div>
       <div id="textLoading" style="display:none">
         <div class="skeleton"></div>
@@ -653,9 +679,23 @@
       <input type="file" id="photoInput" data-testid="photo-input" accept="image/*" capture="environment" style="display:none" onchange="onPhotoSelected(event)"/>
       <div id="photoPreviewWrap" style="display:none">
         <img id="photoPreview" class="preview-img" alt="podgląd"/>
+        <div class="field" style="margin-top:10px">
+          <label class="label">Nazwa posiłku (opcjonalne)</label>
+          <input class="input" id="photoName" data-testid="photo-name-input" placeholder="np. obiad"/>
+        </div>
         <div class="field">
-          <label class="label">Opcjonalna nazwa</label>
-          <input class="input" id="photoName" data-testid="photo-name-input" placeholder="np. obiad" />
+          <label class="label">Ile gramów ma posiłek? (opcjonalne — dokładniejsza analiza)</label>
+          <div style="display:flex;gap:8px;align-items:center">
+            <input class="input" id="photoGrams" data-testid="photo-grams-input" type="number" inputmode="numeric" placeholder="np. 350" style="flex:1"/>
+          </div>
+          <div class="portion-row" style="margin-top:8px;gap:6px;grid-template-columns:repeat(5,1fr)" id="photoGramsPresets">
+            <button class="portion-preset" data-pg="100" style="font-size:10px;padding:5px 6px" onclick="setPhotoGrams(100)">100g</button>
+            <button class="portion-preset" data-pg="150" style="font-size:10px;padding:5px 6px" onclick="setPhotoGrams(150)">150g</button>
+            <button class="portion-preset" data-pg="200" style="font-size:10px;padding:5px 6px" onclick="setPhotoGrams(200)">200g</button>
+            <button class="portion-preset" data-pg="300" style="font-size:10px;padding:5px 6px" onclick="setPhotoGrams(300)">300g</button>
+            <button class="portion-preset" data-pg="400" style="font-size:10px;padding:5px 6px" onclick="setPhotoGrams(400)">400g</button>
+          </div>
+          <div style="font-size:11px;color:#5b5b6e;margin-top:6px">Bez gramów AI oszacuje porcję ze zdjęcia</div>
         </div>
       </div>
       <div id="photoLoading" style="display:none">
@@ -668,7 +708,8 @@
       </button>
       <div style="height:10px"></div>
       <button class="btn btn-primary" id="photoSubmitBtn" data-testid="photo-submit-btn" onclick="submitPhoto()" style="display:none">
-        Oszacuj kalorie
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+        Analizuj i dodaj
       </button>
     </div>
   </section>
@@ -736,16 +777,17 @@
         <input class="input" id="wkName" data-testid="wk-name" placeholder="np. Klatka i triceps"/>
       </div>
       <div class="field">
-        <label class="label">Opisz trening (AI rozpozna ćwiczenia)</label>
-        <textarea class="textarea" id="wkDesc" data-testid="wk-desc" placeholder="np. wyciskanie sztangi 4×10, rozpiętki 3×12, dipsy 3×do upadku"></textarea>
+        <label class="label">Opisz trening — AI rozpozna ćwiczenia</label>
+        <textarea class="textarea" id="wkDesc" data-testid="wk-desc" placeholder="Możesz wkleić cały plan z notatnika, np.:&#10;Wyciskanie sztangi 4×10 @ 80kg&#10;Rozpiętki hantlami 3×12&#10;Dipsy 3×do upadku&#10;Cable crossover 4×15&#10;&#10;AI rozpozna wszystkie ćwiczenia po kolei." style="min-height:140px"></textarea>
+        <div style="font-size:11px;color:#5b5b6e;margin-top:4px">💡 Wklej cały plan — AI przetworzy go w całości i doda ćwiczenia kolejno</div>
       </div>
       <div id="wkAILoading" style="display:none">
         <div class="skeleton"></div>
-        <div class="loading-text">AI analizuje trening…</div>
+        <div class="loading-text">AI analizuje plan treningu…</div>
       </div>
       <button class="btn btn-secondary" data-testid="wk-analyze-btn" onclick="analyzeWorkout()">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12c0 4.97-4.03 9-9 9s-9-4.03-9-9 4.03-9 9-9c2.39 0 4.68.94 6.37 2.63"/><polyline points="21 4 21 10 15 10"/></svg>
-        Analizuj z AI
+        Analizuj z AI (cały plan)
       </button>
     </div>
 
@@ -860,6 +902,13 @@
           <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
           <option value="gemini-3.1-flash-lite" selected>Gemini 3.1 Flash Lite (zalecany)</option>
         </select>
+      </div>
+      <div class="row-toggle">
+        <div>
+          <div class="row-toggle-label">Rozszerzona baza wiedzy</div>
+          <div style="font-size:11px;color:#5b5b6e;margin-top:2px">Wyszukiwanie produktów w Open Food Facts</div>
+        </div>
+        <div class="toggle" id="tgKnowledgeBase" onclick="toggleClick(this)"></div>
       </div>
     </div>
 
@@ -1020,6 +1069,38 @@
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closePortionModal()">Anuluj</button>
       <button class="btn btn-primary" data-testid="portion-save-btn" onclick="savePortion()">Zapisz</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ BARCODE WEIGHT MODAL ============ -->
+<div class="modal-backdrop" id="barcodeWeightModal" data-testid="barcode-weight-modal" onclick="if(event.target===this)closeBarcodeWeightModal()">
+  <div class="modal">
+    <h2>Ile gram produktu?</h2>
+    <p id="barcodeProductName" style="color:#a78bfa;font-weight:600"></p>
+    <div class="field">
+      <label class="label">Waga w gramach</label>
+      <input class="input" id="barcodeWeightInput" data-testid="barcode-weight-input" type="number" inputmode="numeric" placeholder="np. 150" min="1" max="5000" />
+    </div>
+    <div class="portion-row" id="weightPresets">
+      <button class="portion-preset" data-weight="50">50g</button>
+      <button class="portion-preset" data-weight="100">100g</button>
+      <button class="portion-preset" data-weight="150">150g</button>
+      <button class="portion-preset" data-weight="200">200g</button>
+      <button class="portion-preset" data-weight="250">250g</button>
+      <button class="portion-preset" data-weight="300">300g</button>
+    </div>
+    <div class="modal-preview">
+      <div>Szacowane wartości:</div>
+      <strong id="barcodeWeightPreview">0 kcal</strong>
+      <span id="barcodeWeightPreviewMacros" style="display:block;margin-top:4px;color:#7a7a8c;font-size:12px"></span>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeBarcodeWeightModal()">Anuluj</button>
+      <button class="btn btn-primary" data-testid="barcode-weight-save" onclick="saveBarcodeWeight()">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Dodaj
+      </button>
     </div>
   </div>
 </div>
@@ -1379,6 +1460,7 @@ function loadSettingsForm(){
   document.getElementById('restDur').value = String(s.restDur||90);
   document.getElementById('tgSound').classList.toggle('on', s.restSound!==false);
   document.getElementById('tgVibe').classList.toggle('on', s.restVibe!==false);
+  document.getElementById('tgKnowledgeBase').classList.toggle('on', s.useKnowledgeBase === true);
   const au = localStorage.getItem(LS_AUTO_UPDATE);
   document.getElementById('tgAutoUpdate').classList.toggle('on', au!=='false');
   const savedVer = localStorage.getItem('cal_currentVersion');
@@ -1406,7 +1488,8 @@ function saveSettings(){
     goalC: parseInt(document.getElementById('goalC').value)||250,
     restDur: parseInt(document.getElementById('restDur').value)||90,
     restSound: document.getElementById('tgSound').classList.contains('on'),
-    restVibe: document.getElementById('tgVibe').classList.contains('on')
+    restVibe: document.getElementById('tgVibe').classList.contains('on'),
+    useKnowledgeBase: document.getElementById('tgKnowledgeBase').classList.contains('on')
   };
   setSettings(s);
   vibrate(20);
@@ -1419,7 +1502,7 @@ function clearAllData(){
   const toDel = [];
   for(let i=0;i<localStorage.length;i++){
     const k = localStorage.key(i);
-    if(k && (k.startsWith('cal_') || k.startsWith('pr_') || k==='workouts' || k==='custom_exercises')) toDel.push(k);
+    if(k && (k.startsWith('cal_') || k.startsWith('pr_') || k==='workouts' || k==='custom_exercises' || k.startsWith('serper_') || k.startsWith('off_'))) toDel.push(k);
   }
   toDel.forEach(k=>localStorage.removeItem(k));
   sessionStorage.removeItem('cw');
@@ -1629,8 +1712,12 @@ function renderHome(){
     el.style.animationDelay = (i*50)+'ms';
     el.setAttribute('data-testid','meal-item');
     const favOn = isFavorite(m.name);
+    // Wyświetl zdjęcie AI jeśli dostępne, inaczej emoji
+    const foodImageHtml = m.foodImage
+      ? `<img src="${m.foodImage}" alt="${escapeHtml(m.name)}" style="width:42px;height:42px;border-radius:12px;object-fit:cover;border:1px solid var(--accent-border)" />`
+      : `<div class="meal-emoji">${m.emoji||'🍽️'}</div>`;
     el.innerHTML = `
-      <div class="meal-emoji">${m.emoji||'🍽️'}</div>
+      ${foodImageHtml}
       <div class="meal-info" onclick="openPortionModal('${m.id}')" style="cursor:pointer">
         <div class="meal-name">${escapeHtml(m.name)}</div>
         <div class="meal-macros">B ${Math.round(m.bialko||0)}g · T ${Math.round(m.tluszcze||0)}g · W ${Math.round(m.weglowodany||0)}g</div>
@@ -1749,15 +1836,50 @@ function addFavorite(f){
 }
 
 /* =================== PORTION MODAL =================== */
-let portionMealId=null, portionBase=null, portionMult=1;
+let portionMealId=null, portionBase=null, portionMult=1, portionIsWeightMode=false;
 function openPortionModal(id){
   const meal = getMeals().find(m=>m.id===id);
   if(!meal) return;
   portionMealId = id;
-  // base values = original (we store originals on first edit)
-  portionBase = meal.base || {kalorie:meal.kalorie, bialko:meal.bialko, tluszcze:meal.tluszcze, weglowodany:meal.weglowodany};
-  portionMult = meal.mult || 1;
+  // Sprawdź czy produkt ma dane na 100g (z kodu kreskowego)
+  if(meal.per100g){
+    portionIsWeightMode = true;
+    portionBase = {kalorie:meal.per100g.kalorie, bialko:meal.per100g.bialko, tluszcze:meal.per100g.tluszcze, weglowodany:meal.per100g.weglowodany};
+    portionMult = meal.weightGrams || 100;
+  } else {
+    portionIsWeightMode = false;
+    portionBase = meal.base || {kalorie:meal.kalorie, bialko:meal.bialko, tluszcze:meal.tluszcze, weglowodany:meal.weglowodany};
+    portionMult = meal.mult || 1;
+  }
   document.getElementById('portionMealName').textContent = meal.name;
+  // Aktualizuj UI modala w zależności od trybu
+  const presetsRow = document.getElementById('portionPresets');
+  const inputLabel = document.querySelector('#portionModal .field .label');
+  if(portionIsWeightMode){
+    presetsRow.innerHTML = `
+      <button class="portion-preset" data-mult="50">50g</button>
+      <button class="portion-preset" data-mult="100">100g</button>
+      <button class="portion-preset" data-mult="150">150g</button>
+      <button class="portion-preset" data-mult="200">200g</button>
+      <button class="portion-preset" data-mult="250">250g</button>
+      <button class="portion-preset" data-mult="300">300g</button>
+    `;
+    if(inputLabel) inputLabel.textContent = 'Waga w gramach';
+    document.getElementById('portionInput').type = 'number';
+    document.getElementById('portionInput').step = '1';
+    document.getElementById('portionInput').min = '1';
+  } else {
+    presetsRow.innerHTML = `
+      <button class="portion-preset" data-mult="0.5">½×</button>
+      <button class="portion-preset" data-mult="1">1×</button>
+      <button class="portion-preset" data-mult="1.5">1.5×</button>
+      <button class="portion-preset" data-mult="2">2×</button>
+    `;
+    if(inputLabel) inputLabel.textContent = 'Lub wpisz mnożnik';
+    document.getElementById('portionInput').type = 'number';
+    document.getElementById('portionInput').step = '0.1';
+    document.getElementById('portionInput').min = '0.1';
+  }
   document.getElementById('portionInput').value = portionMult;
   document.querySelectorAll('#portionPresets .portion-preset').forEach(b=>{
     b.classList.toggle('active', parseFloat(b.dataset.mult)===portionMult);
@@ -1768,15 +1890,27 @@ function openPortionModal(id){
 function closePortionModal(){
   document.getElementById('portionModal').classList.remove('show');
   portionMealId=null;
+  portionIsWeightMode=false;
 }
 function updatePortionPreview(){
-  const m = portionMult||1;
-  const cal = Math.round(portionBase.kalorie*m);
-  const p = Math.round(portionBase.bialko*m);
-  const f = Math.round(portionBase.tluszcze*m);
-  const c = Math.round(portionBase.weglowodany*m);
-  document.getElementById('portionPreview').textContent = `${cal} kcal`;
-  document.getElementById('portionPreviewMacros').textContent = `B ${p}g · T ${f}g · W ${c}g (${m}×)`;
+  if(portionIsWeightMode){
+    const grams = portionMult||100;
+    const ratio = grams/100;
+    const cal = Math.round(portionBase.kalorie*ratio);
+    const p = Math.round(portionBase.bialko*ratio);
+    const f = Math.round(portionBase.tluszcze*ratio);
+    const c = Math.round(portionBase.weglowodany*ratio);
+    document.getElementById('portionPreview').textContent = `${cal} kcal`;
+    document.getElementById('portionPreviewMacros').textContent = `B ${p}g · T ${f}g · W ${c}g (${grams}g)`;
+  } else {
+    const m = portionMult||1;
+    const cal = Math.round(portionBase.kalorie*m);
+    const p = Math.round(portionBase.bialko*m);
+    const f = Math.round(portionBase.tluszcze*m);
+    const c = Math.round(portionBase.weglowodany*m);
+    document.getElementById('portionPreview').textContent = `${cal} kcal`;
+    document.getElementById('portionPreviewMacros').textContent = `B ${p}g · T ${f}g · W ${c}g (${m}×)`;
+  }
 }
 document.addEventListener('click', e=>{
   const p = e.target.closest('#portionPresets .portion-preset');
@@ -1800,13 +1934,24 @@ function savePortion(){
   const meals = getMeals();
   const m = meals.find(x=>x.id===portionMealId);
   if(!m){ closePortionModal(); return; }
-  const mult = portionMult||1;
-  m.base = portionBase;
-  m.mult = mult;
-  m.kalorie = portionBase.kalorie*mult;
-  m.bialko = portionBase.bialko*mult;
-  m.tluszcze = portionBase.tluszcze*mult;
-  m.weglowodany = portionBase.weglowodany*mult;
+  if(portionIsWeightMode && m.per100g){
+    const grams = portionMult||100;
+    const ratio = grams/100;
+    m.weightGrams = grams;
+    m.kalorie = Math.round(m.per100g.kalorie*ratio);
+    m.bialko = Math.round(m.per100g.bialko*ratio);
+    m.tluszcze = Math.round(m.per100g.tluszcze*ratio);
+    m.weglowodany = Math.round(m.per100g.weglowodany*ratio);
+    m.name = m.name.replace(/\s*\(\d+g\)\s*$/, '') + ` (${grams}g)`;
+  } else {
+    const mult = portionMult||1;
+    m.base = portionBase;
+    m.mult = mult;
+    m.kalorie = portionBase.kalorie*mult;
+    m.bialko = portionBase.bialko*mult;
+    m.tluszcze = portionBase.tluszcze*mult;
+    m.weglowodany = portionBase.weglowodany*mult;
+  }
   setMeals(meals);
   vibrate(15);
   toast('Porcja zaktualizowana','success');
@@ -1898,15 +2043,30 @@ function getModelCandidates(provider){
 function isModelNotFoundError(msg){
   return /\b404\b|not\s*found|not\s*supported|deprecated|does\s*not\s*exist|invalid[_\s-]*model|model_not_found/i.test(msg||'');
 }
+function isRateLimitError(msg){
+  return /\b429\b|quota|rate.?limit|resource.?exhausted|limit.?exceed|too.?many.?request/i.test(msg||'');
+}
+function isGroundingError(msg){
+  return /tools|grounding|search|400|INVALID_ARGUMENT/i.test(msg||'');
+}
 
 // Buduje payload dla Gemini i zwraca surowy tekst odpowiedzi.
-// Rzuca Error z czytelnym komunikatem (zawierającym kod HTTP) przy błędach.
-async function _aiCall(model, key, prompt, imageBase64, maxTokens){
+// useGrounding=true włącza Google Search Grounding (model może googlować zamiast zgadywać).
+// Uwaga: grounding jest niezgodny z responseMimeType:'application/json' — JSON parsujemy przez _extractJSON.
+async function _aiCall(model, key, prompt, imageBase64, maxTokens, useGrounding){
   const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
   const headers = {'Content-Type':'application/json'};
   const parts = [{text:prompt}];
   if(imageBase64) parts.push({inline_data:{mime_type:'image/jpeg', data:imageBase64}});
-  const body = JSON.stringify({contents:[{parts}], generationConfig:{temperature:0.2, responseMimeType:'application/json', maxOutputTokens: maxTokens||512}});
+  const genConfig = {temperature:0.2, maxOutputTokens: maxTokens||512};
+  // responseMimeType nie jest dozwolone razem z groundingiem
+  if(!useGrounding) genConfig.responseMimeType = 'application/json';
+  const payload = {contents:[{parts}], generationConfig: genConfig};
+  if(useGrounding){
+    // Gemini 2.x: googleSearch; starsze modele: google_search_retrieval
+    payload.tools = [{googleSearch:{}}];
+  }
+  const body = JSON.stringify(payload);
   const res = await fetch(endpoint,{method:'POST',headers,body});
   if(!res.ok){
     const t = await res.text();
@@ -1916,8 +2076,13 @@ async function _aiCall(model, key, prompt, imageBase64, maxTokens){
   return data.candidates?.[0]?.content?.parts?.[0]?.text||'';
 }
 
-// Loop po modelach: przy 404/„not found" idzie do następnego, cache sukcesu.
-async function _aiCallWithFallback(prompt, imageBase64, maxTokens){
+// Loop po modelach z pełnym fallbackiem:
+//   • 404 / model not found → następny model
+//   • 429 / quota exceeded  → następny model (rate limit)
+//   • błąd groundingu       → ponów ten sam model bez groundingu
+//   • inne błędy            → rzuć od razu
+// Cache'ujemy ostatni działający model, żeby kolejne requesty startowały od niego.
+async function _aiCallWithFallback(prompt, imageBase64, maxTokens, useGrounding){
   const s = getSettings();
   const key = s.keys?.gemini;
   if(!key) throw new Error('Brak klucza API Gemini. Dodaj w Ustawieniach.');
@@ -1929,16 +2094,148 @@ async function _aiCallWithFallback(prompt, imageBase64, maxTokens){
   let lastErr = null;
   for(const model of candidates){
     try {
-      const text = await _aiCall(model, key, prompt, imageBase64, maxTokens);
+      const text = await _aiCall(model, key, prompt, imageBase64, maxTokens, useGrounding);
       setCachedModel('gemini', model);
       return text;
     } catch(e) {
       lastErr = e;
-      if(!isModelNotFoundError(e.message)) throw e;
-      if(getCachedModel('gemini')===model) localStorage.removeItem('aimodel_gemini');
+      const msg = e.message || '';
+
+      // --- grounding powoduje błąd → ponów bez groundingu ---
+      if(useGrounding && isGroundingError(msg)){
+        try {
+          const text = await _aiCall(model, key, prompt, imageBase64, maxTokens, false);
+          setCachedModel('gemini', model);
+          return text;
+        } catch(e2){
+          lastErr = e2;
+          // jeśli retry bez groundingu też dał 429/404 → traktuj jak normalny błąd poniżej
+          const msg2 = e2.message || '';
+          if(isRateLimitError(msg2) || isModelNotFoundError(msg2)){
+            if(getCachedModel('gemini')===model) localStorage.removeItem('aimodel_gemini');
+            continue; // następny model
+          }
+          throw e2;
+        }
+      }
+
+      // --- 429 quota / rate limit → następny model ---
+      if(isRateLimitError(msg)){
+        if(getCachedModel('gemini')===model) localStorage.removeItem('aimodel_gemini');
+        continue;
+      }
+
+      // --- 404 / model not found → następny model ---
+      if(isModelNotFoundError(msg)){
+        if(getCachedModel('gemini')===model) localStorage.removeItem('aimodel_gemini');
+        continue;
+      }
+
+      // --- inny błąd (np. zły klucz, sieć) → rzuć od razu ---
+      throw e;
     }
   }
-  throw new Error('Żaden z modeli Gemini nie działa. Ostatni błąd: '+(lastErr?.message||'unknown'));
+  // Wszystkie modele wyczerpane
+  const isQuota = isRateLimitError(lastErr?.message||'');
+  const hint = isQuota
+    ? 'Przekroczono limit zapytań (429). Poczekaj chwilę lub sprawdź quota w Google AI Studio.'
+    : (lastErr?.message||'unknown');
+  throw new Error('Żaden z modeli Gemini nie działa. '+hint);
+}
+
+async function webSearch(query) {
+  const cacheKey = 'off_' + btoa(unescape(encodeURIComponent(query))).replace(/=/g, '').slice(0, 32);
+  const cached = localStorage.getItem(cacheKey);
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached);
+      if (Date.now() - parsed.ts < 3600000) return parsed.data;
+    } catch {}
+  }
+
+  try {
+    let url, data;
+    
+    // Sprawdź czy to kod kreskowy (13 cyfr EAN-13)
+    const isBarcode = /^\d{13}$/.test(query.trim());
+    
+    if (isBarcode) {
+      // Bezpośredni lookup po kodzie
+      url = `https://world.openfoodfacts.org/api/v0/product/${encodeURIComponent(query.trim())}.json`;
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      data = await res.json();
+      
+      if (data.status !== 1 || !data.product) return null;
+      
+      const p = data.product;
+      const n = p.nutriments || {};
+      const context = [
+        `produkt: ${p.product_name || '—'}`,
+        p.brands ? `marka: ${p.brands}` : '',
+        `kcal/100g: ${Math.round(n['energy-kcal_100g'] || n['energy-kcal'] || (n['energy_100g']?n['energy_100g']/4.184:0)) || 0}`,
+        `białko/100g: ${(n['proteins_100g']||n['proteins']||0).toFixed(1)}g`,
+        `tłuszcze/100g: ${(n['fat_100g']||n['fat']||0).toFixed(1)}g`,
+        `węgle/100g: ${(n['carbohydrates_100g']||n['carbohydrates']||0).toFixed(1)}g`,
+        `kod: ${p.code || query.trim()}`,
+        `ilość: ${p.quantity || '—'}`
+      ].filter(Boolean).join('\n');
+      
+      localStorage.setItem(cacheKey, JSON.stringify({ data: context, ts: Date.now() }));
+      return context;
+    } else {
+      // Wyszukiwanie po nazwie
+      const params = new URLSearchParams({
+        search_terms: query,
+        search_simple: '1',
+        action: 'process',
+        json: '1',
+        page_size: '5'
+      });
+      url = `https://world.openfoodfacts.org/cgi/search.pl?${params}`;
+      const res = await fetch(url);
+      if (!res.ok) return null;
+      data = await res.json();
+      
+      const products = (data.products || []).slice(0, 5);
+      if (products.length === 0) return null;
+      
+      const context = products.map(p => {
+        const n = p.nutriments || {};
+        return [
+          `produkt: ${p.product_name || '—'}`,
+          p.brands ? `marka: ${p.brands}` : '',
+          `kcal/100g: ${Math.round(n['energy-kcal_100g'] || n['energy-kcal'] || (n['energy_100g']?n['energy_100g']/4.184:0)) || 0}`,
+          `białko/100g: ${(n['proteins_100g']||n['proteins']||0).toFixed(1)}g`,
+          `tłuszcze/100g: ${(n['fat_100g']||n['fat']||0).toFixed(1)}g`,
+          `węgle/100g: ${(n['carbohydrates_100g']||n['carbohydrates']||0).toFixed(1)}g`,
+          `kod: ${p.code || '—'}`
+        ].filter(Boolean).join(' · ');
+      }).join('\n\n');
+      
+      localStorage.setItem(cacheKey, JSON.stringify({ data: context, ts: Date.now() }));
+      return context;
+    }
+  } catch {
+    return null;
+  }
+}
+
+function buildNutritionSearchQuery(mealName, description, grams) {
+  const base = mealName || description || 'posiłek';
+  const parts = [
+    base,
+    'kalorie',
+    'wartości odżywcze',
+    'białko tłuszcze węglowodany',
+    'na 100g'
+  ];
+  if (grams) parts.push(`${grams}g`);
+  return parts.join(' ');
+}
+
+function isNutritionQuery(text) {
+  return /\b(kalorie|makro|białko|tluszcz|tłuszcz|węglowodan|ile kcal|wartości odżywcze|składniki)\b/i.test(text);
 }
 
 function _tryParseJSON(s){ try { return JSON.parse(s); } catch(e){ return null; } }
@@ -1986,8 +2283,8 @@ function _extractJSON(text){
   throw new Error('AI zwróciło niepełny JSON (zbyt długi opis?). Spróbuj krótszego: '+t.slice(0,150));
 }
 
-async function sendToAI(prompt, imageBase64){
-  const text = await _aiCallWithFallback(prompt, imageBase64, 1024);
+async function sendToAI(prompt, imageBase64, useGrounding){
+  const text = await _aiCallWithFallback(prompt, imageBase64, 1024, useGrounding);
   const parsed = _extractJSON(text);
   return {
     kalorie: Number(parsed.kalorie)||0,
@@ -1995,6 +2292,39 @@ async function sendToAI(prompt, imageBase64){
     tluszcze: Number(parsed.tluszcze)||0,
     weglowodany: Number(parsed.weglowodany)||0
   };
+}
+
+/* =================== AI FOOD IMAGE GENERATION =================== */
+async function generateFoodImage(productName){
+  const s = getSettings();
+  const key = s.keys?.gemini;
+  if(!key) return null;
+  // Modele wspierające generowanie obrazów
+  const imageModels = ['gemini-2.0-flash-exp-image-generation', 'gemini-2.0-flash-preview-image-generation'];
+  try {
+    for(const model of imageModels){
+      try {
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+        const body = JSON.stringify({
+          contents: [{ parts: [{ text: `Generate a realistic, appetizing food photography image of: ${productName}. Professional food photography style, clean background, well-lit, top-down view.` }] }],
+          generationConfig: { responseModalities: ["TEXT", "IMAGE"] }
+        });
+        const res = await fetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body });
+        if(!res.ok) continue;
+        const data = await res.json();
+        const parts = data.candidates?.[0]?.content?.parts || [];
+        for(const part of parts){
+          if(part.inlineData && part.inlineData.mimeType && part.inlineData.mimeType.startsWith('image/')){
+            return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+          }
+        }
+      } catch(e) { continue; }
+    }
+    return null;
+  } catch(e) {
+    console.error('Błąd generowania zdjęcia:', e);
+    return null;
+  }
 }
 
 /* =================== AI CHAT =================== */
@@ -2033,32 +2363,28 @@ async function sendAiChat(){
     const s = getSettings();
     const apiKey = s.keys?.gemini;
     if(!apiKey){ toast('Brak klucza Gemini w ustawieniach','error'); return; }
-    const model = s.geminiModel || getModelCandidates('gemini')[0] || 'gemini-3.1-flash-lite';
-    const res = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: aiChatHistory.slice(0,-1).map(m => ({
-            role: m.role === 'assistant' ? 'model' : 'user',
-            parts: [{ text: m.content }]
-          })),
-          systemInstruction: {
-            parts: [{ text: 'Jesteś pomocnym asystentem fitness. Odpowiadasz po polsku.' }]
-          }
-        })
-      }
-    );
-    if(!res.ok){
-      const t = await res.text();
-      throw new Error('AI '+res.status+': '+t.slice(0,250));
+
+    let searchContext = '';
+    if (s.useKnowledgeBase && isNutritionQuery(text)) {
+      searchContext = await webSearch(text);
     }
-    const data = await res.json();
-    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Brak odpowiedzi';
-    aiChatHistory[aiChatHistory.length-1] = {role:'assistant', content:reply};
+
+    // Budujemy pełny prompt z historią konwersacji
+    const systemMsg = 'Jesteś pomocnym asystentem fitness i żywienia. Odpowiadasz po polsku. Gdy użytkownik pyta o konkretny produkt lub posiłek, podaj jego dokładne wartości odżywcze. Bądź konkretny i pomocny.' +
+      (searchContext ? `\n\nAktualne dane z wyszukiwania:\n${searchContext}` : '');
+    const historyLines = aiChatHistory.slice(0,-1).map(m =>
+      (m.role === 'user' ? 'Użytkownik' : 'Asystent') + ': ' + m.content
+    ).join('\n');
+    const fullPrompt = systemMsg + '\n\n' + historyLines;
+
+    const reply = await _aiCallWithFallback(fullPrompt, null, 1024, false);
+    aiChatHistory[aiChatHistory.length-1] = {role:'assistant', content: reply || 'Brak odpowiedzi'};
   }catch(e){
-    aiChatHistory[aiChatHistory.length-1] = {role:'assistant', content:'Błąd: '+e.message};
+    const msg = e.message || '';
+    const friendly = isRateLimitError(msg)
+      ? 'Przekroczono limit zapytań Gemini (429). Poczekaj chwilę i spróbuj ponownie.'
+      : 'Błąd: ' + msg;
+    aiChatHistory[aiChatHistory.length-1] = {role:'assistant', content: friendly};
   }
   renderAiChatMessages();
 }
@@ -2089,13 +2415,29 @@ function showSuccess(){
 
 /* ---- TEXT ---- */
 async function submitText(){
+  const name = document.getElementById('textName').value.trim();
   const desc = document.getElementById('textDesc').value.trim();
-  if(!desc){ toast('Wpisz opis posiłku','error'); vibrate(50); return; }
-  const prompt = `Oszacuj kalorie i makroskładniki dla: ${desc}.\nOdpowiedz TYLKO w JSON: {"kalorie": 000, "bialko": 00, "tluszcze": 00, "weglowodany": 00}`;
+  if(!name && !desc){ toast('Wpisz nazwę posiłku','error'); vibrate(50); return; }
+  const query = name + (desc ? ` — ${desc}` : '');
+  const finalName = name || desc.slice(0,80);
+
+  const s = getSettings();
+  let searchContext = '';
+  if (s.useKnowledgeBase) {
+    const searchQuery = buildNutritionSearchQuery(name, desc, 0);
+    searchContext = await webSearch(searchQuery);
+  }
+
+  const prompt = `Oszacuj kalorie i makroskładniki dla: "${query}". 
+${searchContext ? `Oto aktualne dane z wyszukiwania:\n${searchContext}\n` : 'Dane żywieniowe bierz z popularnych tabel (np. USDA, OpenFoodFacts).'}
+Odpowiedz TYLKO w JSON bez żadnego tekstu: {"kalorie": 000, "bialko": 00, "tluszcze": 00, "weglowodany": 00}`;
+
   document.getElementById('textLoading').style.display='block';
   try{
-    const r = await sendToAI(prompt, null);
-    addMeal({name:desc.slice(0,80), emoji:'🍽️', ...r});
+    const r = await sendToAI(prompt, null, false);
+    addMeal({name: finalName.slice(0,80), emoji:'🍽️', ...r});
+    document.getElementById('textName').value='';
+    document.getElementById('textDesc').value='';
     showSuccess();
     setTimeout(()=>showScreen('home'),700);
   }catch(e){
@@ -2113,6 +2455,12 @@ function resetPhotoForm(){
   document.getElementById('photoPreviewWrap').style.display='none';
   document.getElementById('photoSubmitBtn').style.display='none';
   document.getElementById('photoName').value='';
+  document.getElementById('photoGrams').value='';
+  document.querySelectorAll('#photoGramsPresets .portion-preset').forEach(b=>b.classList.remove('active'));
+}
+function setPhotoGrams(g){
+  document.getElementById('photoGrams').value = g;
+  document.querySelectorAll('#photoGramsPresets .portion-preset').forEach(b=>b.classList.toggle('active', parseFloat(b.dataset.pg)===g));
 }
 function onPhotoSelected(e){
   const f = e.target.files?.[0];
@@ -2142,13 +2490,50 @@ function onPhotoSelected(e){
 }
 async function submitPhoto(){
   if(!photoBase64){ toast('Wybierz zdjęcie','error'); return; }
-  const prompt = `Na tym zdjęciu jest posiłek. Oszacuj kalorie i makroskładniki.\nOdpowiedz TYLKO w JSON: {"kalorie": 000, "bialko": 00, "tluszcze": 00, "weglowodany": 00}`;
+  const grams = parseFloat(document.getElementById('photoGrams').value)||0;
+  const nameHint = document.getElementById('photoName').value.trim();
+
+  let prompt;
+  if(grams > 0){
+    prompt = `Rozpoznaj posiłek na zdjęciu i podaj wartości odżywcze NA 100g tego produktu/posiłku. ${nameHint ? `Wskazówka: "${nameHint}".` : ''}`;
+  } else {
+    prompt = `Rozpoznaj posiłek na zdjęciu i oszacuj kalorie oraz makroskładniki całej widocznej porcji. ${nameHint ? `Wskazówka: "${nameHint}".` : ''}`;
+  }
+
+  const s = getSettings();
+  let searchContext = '';
+  if (s.useKnowledgeBase) {
+    const searchQuery = buildNutritionSearchQuery(nameHint || 'posiłek ze zdjęcia', '', grams);
+    searchContext = await webSearch(searchQuery);
+  }
+
+  prompt += `${searchContext ? `\n\nOto aktualne dane z wyszukiwania:\n${searchContext}\n` : ' Użyj danych żywieniowych z tabel USDA/OpenFoodFacts dla dokładności.'}
+Odpowiedz TYLKO w JSON bez żadnego tekstu: {"nazwa": "string", "kalorie": 000, "bialko": 00.0, "tluszcze": 00.0, "weglowodany": 00.0}`;
+
   document.getElementById('photoLoading').style.display='block';
   document.getElementById('photoSubmitBtn').style.display='none';
   try{
-    const r = await sendToAI(prompt, photoBase64);
-    const name = document.getElementById('photoName').value.trim() || 'Posiłek ze zdjęcia';
-    addMeal({name, emoji:'📸', ...r});
+    const raw = await _aiCallWithFallback(prompt, photoBase64, 512, false);
+    const parsed = _extractJSON(raw);
+    const detectedName = parsed.nazwa || nameHint || 'Posiłek ze zdjęcia';
+    let cal, p, f, c;
+    if(grams > 0){
+      const ratio = grams / 100;
+      cal = Math.round((parsed.kalorie||0) * ratio);
+      p   = Math.round((parsed.bialko||0) * ratio * 10) / 10;
+      f   = Math.round((parsed.tluszcze||0) * ratio * 10) / 10;
+      c   = Math.round((parsed.weglowodany||0) * ratio * 10) / 10;
+    } else {
+      cal = Math.round(parsed.kalorie||0);
+      p   = Math.round((parsed.bialko||0)*10)/10;
+      f   = Math.round((parsed.tluszcze||0)*10)/10;
+      c   = Math.round((parsed.weglowodany||0)*10)/10;
+    }
+    const mealName = nameHint || detectedName.slice(0,80);
+    const suffix = grams > 0 ? ` (${grams}g)` : '';
+    addMeal({name: mealName + suffix, emoji:'📸', kalorie:cal, bialko:p, tluszcze:f, weglowodany:c,
+      ...(grams>0 ? {weightGrams:grams, per100g:{kalorie:parsed.kalorie||0, bialko:parsed.bialko||0, tluszcze:parsed.tluszcze||0, weglowodany:parsed.weglowodany||0}} : {})
+    });
     showSuccess();
     setTimeout(()=>showScreen('home'),700);
   }catch(e){
@@ -2195,6 +2580,77 @@ function submitManualBarcode(){
   stopBarcode();
   lookupBarcode(v);
 }
+/* ---- BARCODE WEIGHT ---- */
+let pendingBarcodeProduct = null; // przechowuje dane produktu z OFF
+
+function openBarcodeWeightModal(productName, per100g){
+  pendingBarcodeProduct = { name: productName, per100g: per100g };
+  document.getElementById('barcodeProductName').textContent = productName;
+  document.getElementById('barcodeWeightInput').value = '100';
+  updateBarcodeWeightPreview();
+  document.getElementById('barcodeWeightModal').classList.add('show');
+  setTimeout(()=>document.getElementById('barcodeWeightInput').focus(), 300);
+}
+function closeBarcodeWeightModal(){
+  document.getElementById('barcodeWeightModal').classList.remove('show');
+  pendingBarcodeProduct = null;
+}
+function updateBarcodeWeightPreview(){
+  if(!pendingBarcodeProduct) return;
+  const grams = parseFloat(document.getElementById('barcodeWeightInput').value)||0;
+  const ratio = grams / 100;
+  const cal = Math.round(pendingBarcodeProduct.per100g.kalorie * ratio);
+  const p = Math.round(pendingBarcodeProduct.per100g.bialko * ratio);
+  const f = Math.round(pendingBarcodeProduct.per100g.tluszcze * ratio);
+  const c = Math.round(pendingBarcodeProduct.per100g.weglowodany * ratio);
+  document.getElementById('barcodeWeightPreview').textContent = `${cal} kcal`;
+  document.getElementById('barcodeWeightPreviewMacros').textContent = `B ${p}g · T ${f}g · W ${c}g (${grams}g)`;
+}
+document.addEventListener('input', e=>{
+  if(e.target.id==='barcodeWeightInput'){
+    const v = parseFloat(e.target.value);
+    if(!isNaN(v) && v>0){
+      document.querySelectorAll('#weightPresets .portion-preset').forEach(b=>b.classList.toggle('active', parseFloat(b.dataset.weight)===v));
+      updateBarcodeWeightPreview();
+    }
+  }
+});
+document.addEventListener('click', e=>{
+  const p = e.target.closest('#weightPresets .portion-preset');
+  if(!p) return;
+  const w = parseFloat(p.dataset.weight);
+  document.getElementById('barcodeWeightInput').value = w;
+  document.querySelectorAll('#weightPresets .portion-preset').forEach(b=>b.classList.toggle('active', b===p));
+  updateBarcodeWeightPreview();
+});
+async function saveBarcodeWeight(){
+  const grams = parseFloat(document.getElementById('barcodeWeightInput').value);
+  if(!grams || grams<=0){ toast('Wpisz wagę w gramach','error'); return; }
+  if(!pendingBarcodeProduct){ closeBarcodeWeightModal(); return; }
+  const ratio = grams / 100;
+  const per100 = pendingBarcodeProduct.per100g;
+  const meal = {
+    name: pendingBarcodeProduct.name + ` (${grams}g)`,
+    emoji: per100.emoji || '📦',
+    kalorie: Math.round(per100.kalorie * ratio),
+    bialko: Math.round(per100.bialko * ratio),
+    tluszcze: Math.round(per100.tluszcze * ratio),
+    weglowodany: Math.round(per100.weglowodany * ratio),
+    barcode: per100.barcode || null,
+    weightGrams: grams,
+    per100g: { kalorie: per100.kalorie, bialko: per100.bialko, tluszcze: per100.tluszcze, weglowodany: per100.weglowodany }
+  };
+  // Spróbuj wygenerować zdjęcie AI jedzenia
+  try {
+    const imgDataUrl = await generateFoodImage(pendingBarcodeProduct.name);
+    if(imgDataUrl) meal.foodImage = imgDataUrl;
+  } catch(e) { /* ignoruj błąd generowania zdjęcia */ }
+  addMeal(meal);
+  closeBarcodeWeightModal();
+  showSuccess();
+  setTimeout(()=>showScreen('home'),700);
+}
+
 async function lookupBarcode(code){
   toast('Sprawdzam kod '+code+'…');
   try{
@@ -2208,20 +2664,21 @@ async function lookupBarcode(code){
     const p = data.product;
     const n = p.nutriments||{};
     const cal = Math.round(n['energy-kcal_100g'] || n['energy-kcal'] || (n['energy_100g']?n['energy_100g']/4.184:0) || 0);
-    const meal = {
-      name: (p.product_name||p.generic_name||'Produkt') + (p.brands?` (${p.brands.split(',')[0]})`:'') + ' / 100g',
-      emoji: '📦',
+    const per100g = {
       kalorie: cal,
-      bialko: Math.round(n['proteins_100g']||n['proteins']||0),
-      tluszcze: Math.round(n['fat_100g']||n['fat']||0),
-      weglowodany: Math.round(n['carbohydrates_100g']||n['carbohydrates']||0)
+      bialko: Math.round((n['proteins_100g']||n['proteins']||0)*10)/10,
+      tluszcze: Math.round((n['fat_100g']||n['fat']||0)*10)/10,
+      weglowodany: Math.round((n['carbohydrates_100g']||n['carbohydrates']||0)*10)/10,
+      barcode: code,
+      emoji: '📦'
     };
-    if(meal.kalorie===0 && meal.bialko===0 && meal.tluszcze===0 && meal.weglowodany===0){
+    if(per100g.kalorie===0 && per100g.bialko===0 && per100g.tluszcze===0 && per100g.weglowodany===0){
       toast('Brak danych odżywczych dla tego produktu','error'); showScreen('add'); return;
     }
-    addMeal(meal);
-    showSuccess();
-    setTimeout(()=>showScreen('home'),700);
+    const productName = (p.product_name||p.generic_name||'Produkt') + (p.brands?` (${p.brands.split(',')[0]})`:'');
+    // Zamiast od razu dodawać — zapytaj o wagę
+    showScreen('add');
+    openBarcodeWeightModal(productName, per100g);
   }catch(e){
     toast('Błąd OFF: '+e.message,'error'); vibrate(60);
   }
@@ -2353,20 +2810,62 @@ document.addEventListener('keydown', e=>{
 });
 
 /* =================== MANUAL ADD =================== */
+function setManGrams(g){
+  document.getElementById('manGrams').value = g;
+  document.querySelectorAll('#manGramsPresets .portion-preset').forEach(b=>b.classList.toggle('active', parseFloat(b.dataset.mg)===g));
+  updateManualPreview();
+}
+function updateManualPreview(){
+  const per100Cal = parseFloat(document.getElementById('manPer100Cal').value)||0;
+  const per100P   = parseFloat(document.getElementById('manPer100P').value)||0;
+  const per100F   = parseFloat(document.getElementById('manPer100F').value)||0;
+  const per100C   = parseFloat(document.getElementById('manPer100C').value)||0;
+  const grams     = parseFloat(document.getElementById('manGrams').value)||0;
+  const box = document.getElementById('manualPreviewBox');
+  if(grams <= 0 || (per100Cal <= 0 && per100P <= 0 && per100F <= 0 && per100C <= 0)){
+    box.style.display='none'; return;
+  }
+  const ratio = grams / 100;
+  const cal = Math.round(per100Cal * ratio);
+  const p   = Math.round(per100P * ratio * 10) / 10;
+  const f   = Math.round(per100F * ratio * 10) / 10;
+  const c   = Math.round(per100C * ratio * 10) / 10;
+  document.getElementById('manPreviewCal').textContent = `${cal} kcal`;
+  document.getElementById('manPreviewMacros').textContent = `B ${p}g · T ${f}g · W ${c}g`;
+  box.style.display = 'block';
+}
 function submitManual(){
-  const name = document.getElementById('manName').value.trim() || 'Posiłek';
-  const cal = parseFloat(document.getElementById('manCal').value);
-  if(!cal || cal<=0){ toast('Wpisz kalorie','error'); vibrate(50); return; }
-  const p = parseFloat(document.getElementById('manP').value)||0;
-  const f = parseFloat(document.getElementById('manF').value)||0;
-  const c = parseFloat(document.getElementById('manC').value)||0;
-  addMeal({name, emoji:'✍️', kalorie:cal, bialko:p, tluszcze:f, weglowodany:c});
+  const name       = document.getElementById('manName').value.trim() || 'Posiłek';
+  const per100Cal  = parseFloat(document.getElementById('manPer100Cal').value)||0;
+  const per100P    = parseFloat(document.getElementById('manPer100P').value)||0;
+  const per100F    = parseFloat(document.getElementById('manPer100F').value)||0;
+  const per100C    = parseFloat(document.getElementById('manPer100C').value)||0;
+  const grams      = parseFloat(document.getElementById('manGrams').value)||0;
+  if(grams <= 0){ toast('Wpisz gramaturę porcji','error'); vibrate(50); return; }
+  if(per100Cal <= 0 && per100P <= 0 && per100F <= 0 && per100C <= 0){
+    toast('Wpisz wartości odżywcze na 100g','error'); vibrate(50); return;
+  }
+  const ratio = grams / 100;
+  const cal   = Math.round(per100Cal * ratio);
+  const p     = Math.round(per100P * ratio * 10) / 10;
+  const f     = Math.round(per100F * ratio * 10) / 10;
+  const c     = Math.round(per100C * ratio * 10) / 10;
+  addMeal({
+    name: `${name} (${grams}g)`,
+    emoji:'✍️',
+    kalorie: cal, bialko: p, tluszcze: f, weglowodany: c,
+    weightGrams: grams,
+    per100g: { kalorie: per100Cal, bialko: per100P, tluszcze: per100F, weglowodany: per100C }
+  });
   // reset form
   document.getElementById('manName').value='';
-  document.getElementById('manCal').value='';
-  document.getElementById('manP').value='';
-  document.getElementById('manF').value='';
-  document.getElementById('manC').value='';
+  document.getElementById('manPer100Cal').value='';
+  document.getElementById('manPer100P').value='';
+  document.getElementById('manPer100F').value='';
+  document.getElementById('manPer100C').value='';
+  document.getElementById('manGrams').value='';
+  document.getElementById('manualPreviewBox').style.display='none';
+  document.querySelectorAll('#manGramsPresets .portion-preset').forEach(b=>b.classList.remove('active'));
   showSuccess();
   setTimeout(()=>showScreen('home'),700);
 }
@@ -2925,24 +3424,51 @@ function addManualExerciseToDraft(){
 }
 async function analyzeWorkout(){
   const desc = document.getElementById('wkDesc').value.trim();
-  if(!desc){ toast('Opisz trening','error'); return; }
-  const prompt = `Przeanalizuj ten opis treningu i wyodrębnij ćwiczenia. Odpowiedz TYLKO w JSON:\n{"cwiczenia":[{"nazwa":string,"grupy_miesniowe":string[],"sugerowane_serie":number,"sugerowane_powt":number}]}\nOpis: ${desc}`;
+  if(!desc){ toast('Opisz trening lub wklej plan','error'); return; }
+  const prompt = `Jesteś ekspertem od treningu siłowego. Przeanalizuj poniższy opis/plan treningu i wyodrębnij WSZYSTKIE ćwiczenia dokładnie w kolejności, w jakiej zostały wymienione.
+
+Dla każdego ćwiczenia zwróć:
+- "nazwa": polska nazwa ćwiczenia (jeśli jest po angielsku — przetłumacz)
+- "grupy_miesniowe": tablica partii (klatka/plecy/nogi/barki/biceps/triceps/brzuch/cardio/posladki/lydki)
+- "sugerowane_serie": liczba serii (jeśli podana, inaczej null)
+- "sugerowane_powt": liczba powtórzeń lub czas (jeśli podany, inaczej null)
+- "ciezar": ciężar jeśli podany jako string np. "80kg", inaczej null
+- "uwagi": dodatkowe uwagi jeśli podane np. "do upadku", inaczej null
+
+Odpowiedz TYLKO w JSON — zero tekstu poza JSON:
+{"cwiczenia":[{"nazwa":string,"grupy_miesniowe":string[],"sugerowane_serie":number|null,"sugerowane_powt":number|null,"ciezar":string|null,"uwagi":string|null}]}
+
+PLAN TRENINGU:
+${desc}`;
+
   document.getElementById('wkAILoading').style.display='block';
   try{
-    // re-use sendToAI ale oczekujemy {cwiczenia:[...]}
-    const r = await sendAIRaw(prompt);
+    const text = await _aiCallWithFallback(prompt, null, 8192);
+    const r = _extractJSON(text);
     if(!r.cwiczenia || !Array.isArray(r.cwiczenia)) throw new Error('AI nie zwróciło listy ćwiczeń');
     if(!workoutDraft) workoutDraft = {name:'',exercises:[]};
     r.cwiczenia.forEach(c=>{
-      workoutDraft.exercises.push({
-        nazwa:c.nazwa, grupy:c.grupy_miesniowe||[],
-        emoji:EX_GROUP_EMOJI[(c.grupy_miesniowe||[])[0]]||'💪',
-        sugerowane_serie:c.sugerowane_serie, sugerowane_powt:c.sugerowane_powt,
+      const exEntry = {
+        nazwa: c.nazwa,
+        grupy: c.grupy_miesniowe||[],
+        emoji: EX_GROUP_EMOJI[(c.grupy_miesniowe||[])[0]]||'💪',
+        sugerowane_serie: c.sugerowane_serie||null,
+        sugerowane_powt: c.sugerowane_powt||null,
         sets:[]
-      });
+      };
+      if(c.ciezar) exEntry.uwagi = (c.uwagi ? `${c.uwagi} · ` : '') + c.ciezar;
+      else if(c.uwagi) exEntry.uwagi = c.uwagi;
+      workoutDraft.exercises.push(exEntry);
     });
     renderDraftExercises();
-    toast(`Dodano ${r.cwiczenia.length} ćwiczeń`,'success');
+    // auto-fill training name from first line if empty
+    const wkNameEl = document.getElementById('wkName');
+    if(!wkNameEl.value.trim()){
+      const firstLine = desc.split('\n')[0].slice(0,40);
+      if(firstLine.length > 2 && firstLine.length < 30) wkNameEl.value = firstLine;
+    }
+    toast(`✅ Dodano ${r.cwiczenia.length} ćwiczeń`, 'success');
+    document.getElementById('wkDesc').value = '';
   }catch(e){
     toast(e.message||'Błąd AI','error');
   }finally{
