@@ -19,16 +19,17 @@ Aplikacja stawia na **prywatność** – wszystkie Twoje dane są zapisywane wy�
 
 ---
 
-## 🤖 Obsługiwane modele AI
+## 🤖 Modele AI (Google Gemini)
 
-| Provider | Model | Skanowanie zdjęć |
-|---|---|---|
-| Google Gemini | gemini-2.5-flash | ✅ działa |
-| OpenAI | gpt-4o-mini | ✅ działa |
-| Anthropic Claude | claude-haiku-4-5 | ✅ działa |
-| DeepSeek | deepseek-chat | ❌ nie obsługuje zdjęć |
+Aplikacja używa **Google Gemini** jako dostawcy AI. Klucz API jest darmowy.
 
-> 💡 **Polecamy Google Gemini** — darmowy, szybki i obsługuje wszystkie funkcje w tym skanowanie zdjęć posiłków.
+| Model | RPM | RPD | Zdjęcia |
+|---|---|---|---|
+| gemini-3.1-flash-lite ⭐ | 15 | 500 | ✅ |
+| gemini-2.5-flash | 5 | 20 | ✅ |
+| gemini-2.5-flash-lite | 10 | 20 | ✅ |
+
+> 💡 Aplikacja automatycznie zaczyna od **gemini-3.1-flash-lite** — najszybszy i najwięcej darmowych zapytań dziennie (500/dzień).
 
 ---
 
@@ -58,7 +59,7 @@ Aplikacja stawia na **prywatność** – wszystkie Twoje dane są zapisywane wy�
 
 **Krok 1** — Otwórz Safari i wejdź na:
 ```
-https://pliononek.github.io/KAWCIA/
+https://kawcia.netlify.app
 ```
 
 **Krok 2** — Na dole ekranu kliknij ikonkę **Udostępnij** (kwadrat ze strzałką skierowaną w górę ↑)
@@ -69,13 +70,15 @@ https://pliononek.github.io/KAWCIA/
 
 **Krok 5** — Na pulpicie pojawi się ikona KAWCIA ☕ — otwieraj ją jak normalną aplikację!
 
+> ⚠️ Używaj **Safari** — tylko Safari na iOS obsługuje dodawanie PWA do ekranu głównego. Chrome i Firefox na iPhonie tego nie umożliwiają.
+
 ---
 
 ### 🤖 Android (Chrome)
 
 **Krok 1** — Otwórz Chrome i wejdź na:
 ```
-https://pliononek.github.io/KAWCIA/
+https://kawcia.netlify.app
 ```
 
 **Krok 2** — Kliknij trzy kropki ⋮ w prawym górnym rogu
@@ -88,17 +91,72 @@ https://pliononek.github.io/KAWCIA/
 
 ### 💻 Komputer (przeglądarka)
 
-Wejdź na [https://pliononek.github.io/KAWCIA/](https://pliononek.github.io/KAWCIA/) — działa od razu, bez instalacji.
+Wejdź na [https://kawcia.netlify.app](https://kawcia.netlify.app) — działa od razu, bez instalacji.
 
 ---
 
-### 🛠️ Lokalnie (dla zaawansowanych)
+## 🖥️ Własny serwer lokalny
+
+### 🐧 Linux (Ubuntu / Debian / Arch / CachyOS)
 
 ```bash
-git clone https://github.com/pliononek/KAWCIA.git
-cd KAWCIA
-# Otwórz plik index.html w przeglądarce (dwuklik)
+# Zainstaluj nginx
+sudo apt install nginx        # Ubuntu/Debian
+sudo pacman -S nginx          # Arch/CachyOS
+
+# Skopiuj plik aplikacji
+sudo cp index.html /usr/share/nginx/html/index.html
+
+# Uruchom nginx
+sudo systemctl enable --now nginx
+
+# Aplikacja dostępna pod:
+# http://localhost          — lokalnie
+# http://TWOJE_IP           — w sieci domowej (sprawdź IP przez: ip a)
 ```
+
+---
+
+### 🪟 Windows
+
+**Opcja 1 — Python (najprościej):**
+```cmd
+cd C:\ścieżka\do\folderu\z\index.html
+python -m http.server 8080
+```
+Wejdź na `http://localhost:8080`
+
+**Opcja 2 — nginx:**
+1. Pobierz nginx ze strony [nginx.org/en/download.html](https://nginx.org/en/download.html)
+2. Wypakuj ZIP, skopiuj `index.html` do folderu `html/`
+3. Uruchom `nginx.exe` → wejdź na `http://localhost`
+
+---
+
+### 🍎 macOS
+
+```bash
+# Python (wbudowany w macOS)
+cd /ścieżka/do/folderu/z/index.html
+python3 -m http.server 8080
+# Wejdź na http://localhost:8080
+
+# lub nginx przez Homebrew
+brew install nginx
+cp index.html /opt/homebrew/var/www/index.html
+brew services start nginx
+```
+
+---
+
+### 🌐 Udostępnienie przez internet (opcjonalne)
+
+1. Sprawdź swoje publiczne IP: `curl ifconfig.me`
+2. W routerze ustaw **port forwarding**: port `80` → Twój lokalny IP
+3. Darmowa domena: [duckdns.org](https://duckdns.org)
+4. HTTPS (wymagane do kamery w Safari): [certbot.eff.org](https://certbot.eff.org)
+
+> ⚠️ Kamera działa tylko przez HTTPS lub `localhost`. Przez zwykłe HTTP Safari zablokuje dostęp do kamery.
 
 ---
 
