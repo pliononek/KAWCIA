@@ -453,6 +453,22 @@
   .toggle.on::after{transform:translateX(22px)}
   .row-toggle{display:flex;align-items:center;justify-content:space-between;padding:10px 0}
   .row-toggle-label{font-size:14px;color:#c0c0d0}
+
+  /* ===== AI CHAT TYPING ANIMATION ===== */
+  .ai-typing-dots{display:inline-flex;align-items:center;gap:5px;padding:4px 2px}
+  .ai-typing-dots span{
+    width:8px;height:8px;border-radius:50%;
+    background:var(--accent-start);
+    animation:aiDotBounce 1.2s infinite ease-in-out;
+  }
+  .ai-typing-dots span:nth-child(2){animation-delay:.2s}
+  .ai-typing-dots span:nth-child(3){animation-delay:.4s}
+  @keyframes aiDotBounce{
+    0%,80%,100%{transform:translateY(0);opacity:.4}
+    40%{transform:translateY(-6px);opacity:1}
+  }
+  .ai-msg{margin-bottom:12px;animation:aiMsgIn .25s ease}
+  @keyframes aiMsgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
 </style>
 </head>
 <body>
@@ -831,9 +847,6 @@
         <label class="label">Aktywny model</label>
         <select class="select" id="settingProvider" data-testid="setting-provider">
           <option value="gemini">Google Gemini (auto)</option>
-          <option value="openai">OpenAI (auto)</option>
-          <option value="deepseek">DeepSeek</option>
-          <option value="claude">Anthropic Claude (auto)</option>
         </select>
       </div>
       <div class="field">
@@ -841,16 +854,12 @@
         <input class="input" id="keyGemini" data-testid="key-gemini" type="password" placeholder="AIza…"/>
       </div>
       <div class="field">
-        <label class="label">Klucz API — OpenAI</label>
-        <input class="input" id="keyOpenAI" data-testid="key-openai" type="password" placeholder="sk-…"/>
-      </div>
-      <div class="field">
-        <label class="label">Klucz API — DeepSeek</label>
-        <input class="input" id="keyDeepSeek" data-testid="key-deepseek" type="password" placeholder="sk-…"/>
-      </div>
-      <div class="field">
-        <label class="label">Klucz API — Claude</label>
-        <input class="input" id="keyClaude" data-testid="key-claude" type="password" placeholder="sk-ant-…"/>
+        <label class="label">Model Gemini</label>
+        <select class="select" id="geminiModel" data-testid="gemini-model">
+          <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+          <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
+          <option value="gemini-3.1-flash-lite" selected>Gemini 3.1 Flash Lite (zalecany)</option>
+        </select>
       </div>
     </div>
 
@@ -872,6 +881,19 @@
           <div class="theme-swatch orange"></div>
           <div class="theme-label">Pomarańczowy</div>
         </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="section-title" style="margin-top:0">Kamera</div>
+      <div class="field">
+        <label class="label">Obiektyw skanera kodów</label>
+        <select class="select" id="cameraLens" data-testid="camera-lens">
+          <option value="auto">Automatyczny</option>
+          <option value="ultrawide">Ultraszeroki (0.5x)</option>
+          <option value="wide">Szerokokątny (1x)</option>
+          <option value="tele">Teleobiektyw (2x+)</option>
+        </select>
       </div>
     </div>
 
@@ -1072,6 +1094,13 @@
     </div>
     <div class="drawer-sep"></div>
     <div class="drawer-section">
+      <div class="drawer-section-title">AI Asystent</div>
+      <button class="drawer-nav-item" data-screen="ai-chat" onclick="drawerNav('ai-chat')">
+        <span class="nav-emoji">💬</span><span>AI Chat</span>
+      </button>
+    </div>
+    <div class="drawer-sep"></div>
+    <div class="drawer-section">
       <div class="drawer-section-title">Motyw</div>
       <div class="drawer-themes" id="drawerThemes">
         <button class="drawer-theme purple" data-testid="dt-purple" data-th="purple" onclick="setTheme('purple');updateDrawerActiveTheme()"></button>
@@ -1163,6 +1192,19 @@
 <div class="pr-flash" id="prFlash">
   <div class="pr-flash-card">🏆 Nowy rekord osobisty!</div>
 </div>
+
+<!-- ============ AI CHAT SCREEN ============ -->
+<section id="screen-ai-chat" class="screen">
+  <button class="back-btn" onclick="showScreen('home')">← Wróć</button>
+  <div class="header" style="padding-top:0"><h1>AI Chat</h1></div>
+  <div class="card" style="flex:1;display:flex;flex-direction:column;min-height:0;margin-bottom:80px">
+    <div id="aiChatMessages" style="flex:1;overflow-y:auto;padding:8px 4px 16px;display:flex;flex-direction:column;gap:12px"></div>
+    <div style="display:flex;gap:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,.06)">
+      <input class="input" id="aiChatInput" placeholder="Zapytaj o kalorie, trening, dietę…" style="flex:1;padding-right:12px" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendAiChat()}"/>
+      <button class="btn btn-primary" style="width:auto;padding:14px 20px" onclick="sendAiChat()"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polyline points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+    </div>
+  </div>
+</section>
 
 <!-- ============ ACHIEVEMENT TOAST ============ -->
 <div class="ach-toast" id="achToast" data-testid="ach-toast">
@@ -1302,7 +1344,7 @@ function showScreen(name){
   const el = document.getElementById('screen-'+name);
   if(el){ el.classList.add('active'); currentScreen=name; window.scrollTo(0,0); }
   // map screens to nav tabs
-  const navMap = {home:'home',add:'home',workout:'workout','workout-create':'workout','workout-active':'workout','workout-detail':'workout','exercise-lib':'workout',history:'history',achievements:'achievements',settings:'settings'};
+  const navMap = {home:'home',add:'home',workout:'workout','workout-create':'workout','workout-active':'workout','workout-detail':'workout','exercise-lib':'workout',history:'history',achievements:'achievements',settings:'settings','ai-chat':'ai-chat'};
   const navActive = navMap[name] || name;
   document.querySelectorAll('.nav-btn').forEach(b=>{
     b.classList.toggle('active', b.dataset.screen===navActive);
@@ -1318,6 +1360,7 @@ function showScreen(name){
   if(name==='workout-active') renderActiveWorkout();
   if(name==='exercise-lib') renderExerciseLib();
   if(name==='achievements') renderAchievementsScreen();
+  if(name==='ai-chat') { aiChatHistory = []; renderAiChatMessages(); }
   if(currentWorkout) updateLiveTimers();
   closeDrawer();
 }
@@ -1325,11 +1368,10 @@ function showScreen(name){
 /* =================== SETTINGS =================== */
 function loadSettingsForm(){
   const s = getSettings();
-  document.getElementById('settingProvider').value = s.provider||'gemini';
+  document.getElementById('settingProvider').value = 'gemini';
   document.getElementById('keyGemini').value = s.keys?.gemini||'';
-  document.getElementById('keyOpenAI').value = s.keys?.openai||'';
-  document.getElementById('keyDeepSeek').value = s.keys?.deepseek||'';
-  document.getElementById('keyClaude').value = s.keys?.claude||'';
+  document.getElementById('geminiModel').value = s.geminiModel||'gemini-3.1-flash-lite';
+  document.getElementById('cameraLens').value = s.cameraLens||'auto';
   document.getElementById('goalCal').value = s.goalCal||'';
   document.getElementById('goalP').value = s.goalP||'';
   document.getElementById('goalF').value = s.goalF||'';
@@ -1352,12 +1394,11 @@ function loadSettingsForm(){
 function toggleClick(el){ el.classList.toggle('on'); vibrate(8); }
 function saveSettings(){
   const s = {
-    provider: document.getElementById('settingProvider').value,
+    provider: 'gemini',
+    geminiModel: document.getElementById('geminiModel').value,
+    cameraLens: document.getElementById('cameraLens').value,
     keys: {
-      gemini: document.getElementById('keyGemini').value.trim(),
-      openai: document.getElementById('keyOpenAI').value.trim(),
-      deepseek: document.getElementById('keyDeepSeek').value.trim(),
-      claude: document.getElementById('keyClaude').value.trim()
+      gemini: document.getElementById('keyGemini').value.trim()
     },
     goalCal: parseInt(document.getElementById('goalCal').value)||2000,
     goalP: parseInt(document.getElementById('goalP').value)||150,
@@ -1422,7 +1463,7 @@ async function checkForUpdates(quiet=false){
     // 1) pobierz najnowszy release z GitHub API
     const res = await fetch(APP_API_RELEASES, {
       headers: { 'Accept': 'application/vnd.github.v3+json' },
-      signal: AbortSignal.timeout(10000)
+      signal: (()=>{ const c=new AbortController(); setTimeout(()=>c.abort(),10000); return c.signal; })()
     });
     if(!res.ok) throw new Error('GitHub API: '+res.status);
     const data = await res.json();
@@ -1469,7 +1510,7 @@ async function installUpdate(){
   statusText.textContent = 'Pobieranie nowej wersji…';
 
   try {
-    const resp = await fetch(APP_RAW_URL, { signal: AbortSignal.timeout(30000) });
+    const resp = await fetch(APP_RAW_URL, { signal: (()=>{ const c=new AbortController(); setTimeout(()=>c.abort(),30000); return c.signal; })() });
     if(!resp.ok) throw new Error('HTTP '+resp.status);
     const reader = resp.body.getReader();
     const contentLength = parseInt(resp.headers.get('Content-Length') || '0') || 250000;
@@ -1513,7 +1554,7 @@ async function autoUpdateCheck(){
   try {
     const res = await fetch(APP_API_RELEASES, {
       headers: { 'Accept': 'application/vnd.github.v3+json' },
-      signal: AbortSignal.timeout(8000)
+      signal: (()=>{ const c=new AbortController(); setTimeout(()=>c.abort(),8000); return c.signal; })()
     });
     if(!res.ok) return;
     const data = await res.json();
@@ -1844,10 +1885,7 @@ function exportCSV(){
 // Apka próbuje po kolei; pierwszy działający jest cache'owany w localStorage
 // pod kluczem aimodel_<provider>. Przy 404/„not found" próbuje następnego.
 const PROVIDER_MODELS = {
-  gemini:   ['gemini-3.1-flash-lite','gemini-2.5-flash','gemini-2.5-flash-lite'],
-  openai:   ['gpt-4o-mini','gpt-4o','gpt-4-turbo'],
-  claude:   ['claude-haiku-4-5-20251001','claude-3-5-haiku-latest','claude-3-haiku-20240307'],
-  deepseek: ['deepseek-chat']
+  gemini: ['gemini-3.1-flash-lite','gemini-2.5-flash','gemini-2.5-flash-lite']
 };
 function getCachedModel(provider){ return localStorage.getItem('aimodel_'+provider)||null; }
 function setCachedModel(provider, model){ localStorage.setItem('aimodel_'+provider, model); }
@@ -1861,73 +1899,46 @@ function isModelNotFoundError(msg){
   return /\b404\b|not\s*found|not\s*supported|deprecated|does\s*not\s*exist|invalid[_\s-]*model|model_not_found/i.test(msg||'');
 }
 
-// Buduje payload dla danego providera/modelu i zwraca surowy tekst odpowiedzi.
+// Buduje payload dla Gemini i zwraca surowy tekst odpowiedzi.
 // Rzuca Error z czytelnym komunikatem (zawierającym kod HTTP) przy błędach.
-async function _aiCall(provider, model, key, prompt, imageBase64, maxTokens){
-  let endpoint, headers, body;
-  if(provider==='gemini'){
-    endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
-    headers = {'Content-Type':'application/json'};
-    const parts = [{text:prompt}];
-    if(imageBase64) parts.push({inline_data:{mime_type:'image/jpeg', data:imageBase64}});
-    body = JSON.stringify({contents:[{parts}], generationConfig:{temperature:0.2, responseMimeType:'application/json', maxOutputTokens: maxTokens||512}});
-  } else if(provider==='openai'){
-    endpoint='https://api.openai.com/v1/chat/completions';
-    headers={'Content-Type':'application/json','Authorization':'Bearer '+key};
-    const content = imageBase64
-      ? [{type:'text',text:prompt},{type:'image_url',image_url:{url:'data:image/jpeg;base64,'+imageBase64}}]
-      : prompt;
-    body = JSON.stringify({model, messages:[{role:'user',content}], temperature:0.2, response_format:{type:'json_object'}, max_tokens: maxTokens||512});
-  } else if(provider==='deepseek'){
-    if(imageBase64) throw new Error('DeepSeek nie obsługuje zdjęć — zmień provider w Ustawieniach.');
-    endpoint='https://api.deepseek.com/v1/chat/completions';
-    headers={'Content-Type':'application/json','Authorization':'Bearer '+key};
-    body = JSON.stringify({model, messages:[{role:'user',content:prompt}], temperature:0.2, response_format:{type:'json_object'}, max_tokens: maxTokens||512});
-  } else if(provider==='claude'){
-    endpoint='https://api.anthropic.com/v1/messages';
-    headers={'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'};
-    const content = imageBase64
-      ? [{type:'image',source:{type:'base64',media_type:'image/jpeg',data:imageBase64}},{type:'text',text:prompt}]
-      : [{type:'text',text:prompt}];
-    body = JSON.stringify({model, max_tokens: maxTokens||512, messages:[{role:'user',content}]});
-  } else {
-    throw new Error('Nieznany provider: '+provider);
-  }
+async function _aiCall(model, key, prompt, imageBase64, maxTokens){
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+  const headers = {'Content-Type':'application/json'};
+  const parts = [{text:prompt}];
+  if(imageBase64) parts.push({inline_data:{mime_type:'image/jpeg', data:imageBase64}});
+  const body = JSON.stringify({contents:[{parts}], generationConfig:{temperature:0.2, responseMimeType:'application/json', maxOutputTokens: maxTokens||512}});
   const res = await fetch(endpoint,{method:'POST',headers,body});
   if(!res.ok){
     const t = await res.text();
     throw new Error('AI '+res.status+': '+t.slice(0,250));
   }
   const data = await res.json();
-  let text='';
-  if(provider==='gemini') text = data.candidates?.[0]?.content?.parts?.[0]?.text||'';
-  else if(provider==='openai'||provider==='deepseek') text = data.choices?.[0]?.message?.content||'';
-  else if(provider==='claude') text = data.content?.[0]?.text||'';
-  return text;
+  return data.candidates?.[0]?.content?.parts?.[0]?.text||'';
 }
 
 // Loop po modelach: przy 404/„not found" idzie do następnego, cache sukcesu.
 async function _aiCallWithFallback(prompt, imageBase64, maxTokens){
   const s = getSettings();
-  const provider = s.provider||'gemini';
-  const key = s.keys?.[provider];
-  if(!key) throw new Error('Brak klucza API dla '+provider+'. Dodaj w Ustawieniach.');
-  const candidates = getModelCandidates(provider);
+  const key = s.keys?.gemini;
+  if(!key) throw new Error('Brak klucza API Gemini. Dodaj w Ustawieniach.');
+  const preferred = s.geminiModel;
+  const allCandidates = getModelCandidates('gemini');
+  const candidates = preferred
+    ? [preferred, ...allCandidates.filter(m => m !== preferred)]
+    : allCandidates;
   let lastErr = null;
   for(const model of candidates){
     try {
-      const text = await _aiCall(provider, model, key, prompt, imageBase64, maxTokens);
-      setCachedModel(provider, model);
+      const text = await _aiCall(model, key, prompt, imageBase64, maxTokens);
+      setCachedModel('gemini', model);
       return text;
     } catch(e) {
       lastErr = e;
-      // tylko przy "model not found" próbujemy kolejnego; przy auth/rate limit → wyjdź od razu
       if(!isModelNotFoundError(e.message)) throw e;
-      // wyczyść cache jeśli to było cache'owane
-      if(getCachedModel(provider)===model) localStorage.removeItem('aimodel_'+provider);
+      if(getCachedModel('gemini')===model) localStorage.removeItem('aimodel_gemini');
     }
   }
-  throw new Error('Żaden z modeli '+provider+' nie działa. Ostatni błąd: '+(lastErr?.message||'unknown'));
+  throw new Error('Żaden z modeli Gemini nie działa. Ostatni błąd: '+(lastErr?.message||'unknown'));
 }
 
 function _tryParseJSON(s){ try { return JSON.parse(s); } catch(e){ return null; } }
@@ -1984,6 +1995,72 @@ async function sendToAI(prompt, imageBase64){
     tluszcze: Number(parsed.tluszcze)||0,
     weglowodany: Number(parsed.weglowodany)||0
   };
+}
+
+/* =================== AI CHAT =================== */
+let aiChatHistory = [];
+
+function renderAiChatMessages(){
+  const container = document.getElementById('aiChatMessages');
+  if(!container) return;
+  container.innerHTML = aiChatHistory.map(m => {
+    const isUser = m.role === 'user';
+    const isThinking = !isUser && m.content === '';
+    const bubbleContent = isThinking
+      ? `<div class="ai-typing-dots"><span></span><span></span><span></span></div>`
+      : m.content.replace(/\n/g,'<br>');
+    return `
+    <div class="ai-msg" style="display:flex;flex-direction:column;${isUser?'align-items:flex-end':'align-items:flex-start'}">
+      <div style="max-width:80%;padding:12px 16px;border-radius:16px;${isUser?'background:linear-gradient(135deg,var(--accent-start),var(--accent-end));color:#fff;border-bottom-right-radius:4px':'background:rgba(255,255,255,.06);color:#f5f5fa;border-bottom-left-radius:4px;border:1px solid rgba(255,255,255,.06)'}">
+        ${bubbleContent}
+      </div>
+      <div style="font-size:10px;color:#5b5b6e;margin-top:4px;padding:0 4px">${isUser?'Ty':'AI'}</div>
+    </div>`;
+  }).join('');
+  container.scrollTop = container.scrollHeight;
+}
+
+async function sendAiChat(){
+  const input = document.getElementById('aiChatInput');
+  const text = input.value.trim();
+  if(!text) return;
+  input.value='';
+  aiChatHistory.push({role:'user', content:text});
+  renderAiChatMessages();
+  aiChatHistory.push({role:'assistant', content:''});
+  renderAiChatMessages();
+  try{
+    const s = getSettings();
+    const apiKey = s.keys?.gemini;
+    if(!apiKey){ toast('Brak klucza Gemini w ustawieniach','error'); return; }
+    const model = s.geminiModel || getModelCandidates('gemini')[0] || 'gemini-3.1-flash-lite';
+    const res = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(apiKey)}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: aiChatHistory.slice(0,-1).map(m => ({
+            role: m.role === 'assistant' ? 'model' : 'user',
+            parts: [{ text: m.content }]
+          })),
+          systemInstruction: {
+            parts: [{ text: 'Jesteś pomocnym asystentem fitness. Odpowiadasz po polsku.' }]
+          }
+        })
+      }
+    );
+    if(!res.ok){
+      const t = await res.text();
+      throw new Error('AI '+res.status+': '+t.slice(0,250));
+    }
+    const data = await res.json();
+    const reply = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Brak odpowiedzi';
+    aiChatHistory[aiChatHistory.length-1] = {role:'assistant', content:reply};
+  }catch(e){
+    aiChatHistory[aiChatHistory.length-1] = {role:'assistant', content:'Błąd: '+e.message};
+  }
+  renderAiChatMessages();
 }
 
 /* =================== ADD MEAL =================== */
@@ -2065,8 +2142,6 @@ function onPhotoSelected(e){
 }
 async function submitPhoto(){
   if(!photoBase64){ toast('Wybierz zdjęcie','error'); return; }
-  const s = getSettings();
-  if(s.provider==='deepseek'){ toast('DeepSeek nie obsługuje zdjęć — zmień provider','error'); return; }
   const prompt = `Na tym zdjęciu jest posiłek. Oszacuj kalorie i makroskładniki.\nOdpowiedz TYLKO w JSON: {"kalorie": 000, "bialko": 00, "tluszcze": 00, "weglowodany": 00}`;
   document.getElementById('photoLoading').style.display='block';
   document.getElementById('photoSubmitBtn').style.display='none';
@@ -2099,12 +2174,39 @@ async function startBarcode(){
   try{
     codeReader = new ZXing.BrowserMultiFormatReader();
     const video = document.getElementById('barcodeVideo');
-    codeReader.decodeFromVideoDevice(null, video, (result, err)=>{
-      if(result){
-        const code = result.getText();
-        stopBarcode();
-        lookupBarcode(code);
+    const s = getSettings();
+    const lens = s.cameraLens || 'auto';
+
+    const devices = await ZXing.BrowserMultiFormatReader.listVideoInputDevices();
+    let deviceId = null;
+
+    if(lens === 'ultrawide'){
+      const found = devices.find(d => /ultra|0\.5|ultrawide/i.test(d.label));
+      if(found){ deviceId = found.deviceId; }
+      else {
+        // próbuj przez zoom constraint
+        try{
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: { ideal: 'environment' }, zoom: 0.5 }
+          });
+          video.srcObject = stream; await video.play();
+          codeReader.decodeFromStream(stream, video, (result)=>{
+            if(result){ const code = result.getText(); stopBarcode(); lookupBarcode(code); }
+          });
+          return;
+        }catch(ze){ toast('Ultraszeroki niedostępny, używam domyślnej','info'); }
       }
+    } else if(lens === 'wide'){
+      const found = devices.find(d => /wide|back|rear|environment/i.test(d.label) && !/ultra/i.test(d.label));
+      if(found) deviceId = found.deviceId;
+    } else if(lens === 'tele'){
+      const found = devices.find(d => /tele|2x|zoom/i.test(d.label));
+      if(found) deviceId = found.deviceId;
+    }
+    // 'auto' lub nie znaleziono — deviceId zostaje null (domyślna tylna kamera)
+
+    codeReader.decodeFromVideoDevice(deviceId, video, (result, err)=>{
+      if(result){ const code = result.getText(); stopBarcode(); lookupBarcode(code); }
     });
   }catch(e){
     toast('Brak dostępu do kamery: '+e.message,'error');
