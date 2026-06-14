@@ -2180,30 +2180,15 @@ async function startBarcode(){
     const devices = await ZXing.BrowserMultiFormatReader.listVideoInputDevices();
     let deviceId = null;
 
-    if(lens === 'ultrawide'){
-      const found = devices.find(d => /ultra|0\.5|ultrawide/i.test(d.label));
-      if(found){ deviceId = found.deviceId; }
-      else {
-        // próbuj przez zoom constraint
-        try{
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: { ideal: 'environment' }, zoom: 0.5 }
-          });
-          video.srcObject = stream; await video.play();
-          codeReader.decodeFromStream(stream, video, (result)=>{
-            if(result){ const code = result.getText(); stopBarcode(); lookupBarcode(code); }
-          });
-          return;
-        }catch(ze){ toast('Ultraszeroki niedostępny, używam domyślnej','info'); }
-      }
-    } else if(lens === 'wide'){
-      const found = devices.find(d => /wide|back|rear|environment/i.test(d.label) && !/ultra/i.test(d.label));
+    // używaj domyślnej tylnej kamery
+    if(lens === 'wide'){
+      const found = devices.find(d => /wide|back|rear|environment/i.test(d.label));
       if(found) deviceId = found.deviceId;
     } else if(lens === 'tele'){
       const found = devices.find(d => /tele|2x|zoom/i.test(d.label));
       if(found) deviceId = found.deviceId;
     }
-    // 'auto' lub nie znaleziono — deviceId zostaje null (domyślna tylna kamera)
+    // 'auto', 'ultrawide' lub nie znaleziono — deviceId zostaje null (domyślna tylna kamera)
 
     codeReader.decodeFromVideoDevice(deviceId, video, (result, err)=>{
       if(result){ const code = result.getText(); stopBarcode(); lookupBarcode(code); }
