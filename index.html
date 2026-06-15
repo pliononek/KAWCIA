@@ -470,6 +470,25 @@
   }
   .ai-msg{margin-bottom:12px;animation:aiMsgIn .25s ease}
   @keyframes aiMsgIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+
+  /* ===== WEEKLY PLAN v2 ===== */
+  .week-day-block{border-radius:18px;padding:16px 18px;margin-bottom:10px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.03);cursor:pointer;transition:transform .15s,box-shadow .15s;display:flex;align-items:center;gap:14px}
+  .week-day-block:active{transform:scale(.98)}
+  .week-day-block.today{background:linear-gradient(135deg,var(--accent-start),var(--accent-end));border-color:transparent;box-shadow:0 0 20px var(--glow)}
+  .week-day-block-left{min-width:52px}
+  .week-day-block-name{font-size:16px;font-weight:800}
+  .week-day-block.today .week-day-block-name{color:#fff}
+  .week-day-block-date{font-size:11px;opacity:.6;margin-top:1px}
+  .week-day-block.today .week-day-block-date{color:rgba(255,255,255,.8)}
+  .week-day-block-exercises{flex:1;min-width:0}
+  .week-day-block-ex-count{font-size:12px;font-weight:700;color:var(--accent-text);margin-bottom:3px}
+  .week-day-block.today .week-day-block-ex-count{color:rgba(255,255,255,.9)}
+  .week-day-block-ex-preview{font-size:11px;color:#5b5b6e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .week-day-block.today .week-day-block-ex-preview{color:rgba(255,255,255,.7)}
+  .week-day-block-arrow{color:#3a3a4a;flex-shrink:0}
+  .week-day-block.today .week-day-block-arrow{color:rgba(255,255,255,.6)}
+  .week-day-block-empty{font-size:12px;color:#3a3a4a;font-style:italic}
+  .week-day-block.today .week-day-block-empty{color:rgba(255,255,255,.5)}
 </style>
 </head>
 <body>
@@ -751,6 +770,7 @@
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
       </button>
     </div>
+    <div id="dayPlanSection"></div>
     <button class="btn btn-primary" data-testid="new-workout-btn" onclick="showScreen('workout-create')">
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
       Nowy trening
@@ -893,7 +913,7 @@
       </div>
       <div class="field">
         <label class="label">Klucz API — Gemini</label>
-        <input class="input" id="keyGemini" data-testid="key-gemini" type="password" placeholder="AIza…"/>
+        <input class="input" id="keyGemini" data-testid="key-gemini" type="password" placeholder="klucz api"/>
       </div>
       <div class="field">
         <label class="label">Model Gemini</label>
@@ -1105,13 +1125,58 @@
   </div>
 </div>
 
+<!-- ============ WORKOUT WEEK SCHEDULE ============ -->
+<section id="screen-workout-week" class="screen">
+  <div class="header">
+    <h1>Trening</h1>
+    <button class="icon-btn" onclick="openDrawer()" aria-label="Menu">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+  </div>
+
+  <!-- karta aktywnego treningu (ukryta gdy brak) -->
+  <div id="weekActiveCard" style="display:none;margin-bottom:12px">
+    <div class="card" style="background:linear-gradient(135deg,var(--accent-start),var(--accent-end));border:none;cursor:pointer" onclick="showScreen('workout-active')">
+      <div style="display:flex;align-items:center;gap:12px">
+        <div style="font-size:22px">⏱️</div>
+        <div style="flex:1">
+          <div style="font-size:15px;font-weight:800;color:#fff">Trening trwa!</div>
+          <div style="font-size:12px;color:rgba(255,255,255,.8)" id="weekActiveCardName"></div>
+        </div>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>
+      </div>
+    </div>
+  </div>
+
+  <!-- bloczki dni tygodnia -->
+  <div id="weekDayBlocks"></div>
+
+  <!-- AI plan na dole -->
+  <div style="margin-top:8px">
+    <div class="section-title">🤖 Wklej plan tygodniowy — AI rozdzieli na dni</div>
+    <div class="card">
+      <textarea class="textarea" id="weekPlanInput" placeholder="Wklej tutaj cały plan z notatnika, np.:&#10;Poniedziałek: Klatka&#10;- Wyciskanie sztangi 4×8 80kg&#10;- Rozpiętki 3×12&#10;&#10;Środa: Plecy&#10;- Martwy ciąg 4×5 100kg&#10;..." style="min-height:120px;margin-bottom:12px"></textarea>
+      <button class="btn btn-primary" id="weekAiBtn" onclick="submitWeeklyPlanAi()">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polyline points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        Analizuj i rozplanuj tydzień
+      </button>
+      <div id="weekAiLoading" style="display:none;margin-top:10px">
+        <div class="skeleton"></div>
+        <div class="loading-text">AI rozdziela plan na dni…</div>
+      </div>
+    </div>
+  </div>
+
+  <div style="height:80px"></div>
+</section>
+
 <!-- ============ BOTTOM NAV ============ -->
 <nav class="bottom-nav">
   <button class="nav-btn active" data-testid="nav-home" data-screen="home" onclick="showScreen('home')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
     <span>Dziś</span>
   </button>
-  <button class="nav-btn" data-testid="nav-workout" data-screen="workout" onclick="showScreen('workout')">
+  <button class="nav-btn" data-testid="nav-workout" data-screen="workout-week" onclick="showScreen('workout-week')">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v16M18 4v16M6 8h12M6 16h12M2 10h2v4H2zM20 10h2v4h-2z"/></svg>
     <span>Trening</span>
   </button>
@@ -1167,7 +1232,7 @@
     <div class="drawer-section">
       <div class="drawer-section-title">Nawigacja</div>
       <button class="drawer-nav-item" data-screen="home" data-testid="dn-home" onclick="drawerNav('home')"><span class="nav-emoji">🏠</span><span>Strona główna</span></button>
-      <button class="drawer-nav-item" data-screen="workout" data-testid="dn-workout" onclick="drawerNav('workout')"><span class="nav-emoji">💪</span><span>Trening</span></button>
+      <button class="drawer-nav-item" data-screen="workout-week" data-testid="dn-workout" onclick="drawerNav('workout-week')"><span class="nav-emoji">💪</span><span>Trening</span></button>
       <button class="drawer-nav-item" data-screen="exercise-lib" data-testid="dn-lib" onclick="drawerNav('exercise-lib')"><span class="nav-emoji">📚</span><span>Baza ćwiczeń</span></button>
       <button class="drawer-nav-item" data-screen="history" data-testid="dn-history" onclick="drawerNav('history')"><span class="nav-emoji">📊</span><span>Historia</span></button>
       <button class="drawer-nav-item" data-screen="achievements" data-testid="dn-ach" onclick="drawerNav('achievements')"><span class="nav-emoji">🏅</span><span>Osiągnięcia</span></button>
@@ -1335,7 +1400,8 @@ const LS = {
   theme: 'cal_theme',
   workouts: 'workouts',
   customEx: 'custom_exercises',
-  prPrefix: 'pr_'
+  prPrefix: 'pr_',
+  weeklyPlan: 'weekly_plan'
 };
 
 /* =================== UPDATE SYSTEM =================== */
@@ -1425,7 +1491,7 @@ function showScreen(name){
   const el = document.getElementById('screen-'+name);
   if(el){ el.classList.add('active'); currentScreen=name; window.scrollTo(0,0); }
   // map screens to nav tabs
-  const navMap = {home:'home',add:'home',workout:'workout','workout-create':'workout','workout-active':'workout','workout-detail':'workout','exercise-lib':'workout',history:'history',achievements:'achievements',settings:'settings','ai-chat':'ai-chat'};
+  const navMap = {home:'home',add:'home',workout:'workout','workout-create':'workout','workout-active':'workout','workout-detail':'workout','exercise-lib':'workout',history:'history',achievements:'achievements',settings:'settings','ai-chat':'ai-chat','workout-week':'workout-week'};
   const navActive = navMap[name] || name;
   document.querySelectorAll('.nav-btn').forEach(b=>{
     b.classList.toggle('active', b.dataset.screen===navActive);
@@ -1437,6 +1503,7 @@ function showScreen(name){
   if(name==='add-photo') resetPhotoForm();
   if(name==='add-text') document.getElementById('textDesc').value='';
   if(name==='workout') renderWorkoutHome();
+  if(name==='workout-week') renderWeeklySchedule();
   if(name==='workout-create') { renderWorkoutCreate(); renderTemplates(); }
   if(name==='workout-active') renderActiveWorkout();
   if(name==='exercise-lib') renderExerciseLib();
@@ -1620,6 +1687,16 @@ async function installUpdate(){
     bar.style.width = '100%';
     percent.textContent = '100%';
     statusText.textContent = '✅ Gotowe! Przeładowywanie…';
+
+    // backup kluczowych danych przed przeładowaniem
+    try {
+      const _bak = {
+        settings: localStorage.getItem('cal_settings'),
+        meals:    localStorage.getItem('cal_meals'),
+        plan:     localStorage.getItem('weekly_plan')
+      };
+      sessionStorage.setItem('_kawcia_bak', JSON.stringify(_bak));
+    } catch(e){ /* cicho */ }
 
     setTimeout(() => location.reload(), 600);
 
@@ -2902,7 +2979,7 @@ function refreshDrawer(){
   document.getElementById('dMF').textContent = Math.round(tot.f)+'g';
   document.getElementById('dMC').textContent = Math.round(tot.c)+'g';
   // active nav
-  const navMap = {home:'home',workout:'workout','exercise-lib':'exercise-lib',history:'history',achievements:'achievements',settings:'settings'};
+  const navMap = {home:'home',workout:'workout','exercise-lib':'exercise-lib',history:'history',achievements:'achievements',settings:'settings','workout-week':'workout-week'};
   const cur = navMap[currentScreen] || (currentScreen.startsWith('workout')?'workout':currentScreen);
   document.querySelectorAll('.drawer-nav-item').forEach(el=>el.classList.toggle('active', el.dataset.screen===cur));
   updateDrawerActiveTheme();
@@ -3254,6 +3331,136 @@ function saveCustomExercise(){
   renderExerciseLib();
 }
 
+/* =================== WEEKLY PLAN v2 =================== */
+const WEEK_DAYS = [
+  {key:'mon', label:'Poniedziałek', short:'PON'},
+  {key:'tue', label:'Wtorek',       short:'WTO'},
+  {key:'wed', label:'Środa',        short:'ŚRO'},
+  {key:'thu', label:'Czwartek',     short:'CZW'},
+  {key:'fri', label:'Piątek',       short:'PIĄ'},
+  {key:'sat', label:'Sobota',       short:'SOB'},
+  {key:'sun', label:'Niedziela',    short:'NIE'}
+];
+const JS_DAY_MAP = ['sun','mon','tue','wed','thu','fri','sat'];
+let selectedWeekDay = JS_DAY_MAP[new Date().getDay()];
+
+function getWeeklyPlan(){
+  try{ return JSON.parse(localStorage.getItem(LS.weeklyPlan))||{}; }catch(e){ return {}; }
+}
+function setWeeklyPlan(p){ localStorage.setItem(LS.weeklyPlan, JSON.stringify(p)); }
+function getWeekDay(key){ return (getWeeklyPlan()[key]||[]); }
+
+function renderWeeklySchedule(){
+  const activeCard = document.getElementById('weekActiveCard');
+  if(currentWorkout){
+    activeCard.style.display = 'block';
+    document.getElementById('weekActiveCardName').textContent = currentWorkout.name || 'Wróć do ćwiczenia';
+  } else {
+    activeCard.style.display = 'none';
+  }
+
+  const wrap = document.getElementById('weekDayBlocks');
+  if(!wrap) return;
+  const plan = getWeeklyPlan();
+  const todayKey = JS_DAY_MAP[new Date().getDay()];
+
+  const now = new Date();
+  const todayIdx = now.getDay();
+  const monday = new Date(now);
+  monday.setDate(now.getDate() - ((todayIdx+6)%7));
+
+  wrap.innerHTML = '';
+  WEEK_DAYS.forEach((d, i) => {
+    const dayDate = new Date(monday);
+    dayDate.setDate(monday.getDate() + i);
+    const dateStr = dayDate.toLocaleDateString('pl-PL',{day:'numeric',month:'short'});
+    const exercises = plan[d.key] || [];
+    const isToday = d.key === todayKey;
+
+    const preview = exercises.map(e=>e.emoji||'💪').slice(0,5).join(' ');
+    const names = exercises.map(e=>e.nazwa).join(', ');
+
+    const div = document.createElement('div');
+    div.className = 'week-day-block' + (isToday ? ' today' : '');
+    div.onclick = () => {
+      selectedWeekDay = d.key;
+      showScreen('workout');
+    };
+    div.innerHTML = `
+      <div class="week-day-block-left">
+        <div class="week-day-block-name">${d.short}</div>
+        <div class="week-day-block-date">${dateStr}</div>
+      </div>
+      <div class="week-day-block-exercises">
+        ${exercises.length > 0
+          ? `<div class="week-day-block-ex-count">${preview} ${exercises.length} ćwiczeń</div>
+             <div class="week-day-block-ex-preview">${escapeHtml(names)}</div>`
+          : ``
+        }
+      </div>
+      <svg class="week-day-block-arrow" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"/></svg>`;
+    wrap.appendChild(div);
+  });
+}
+
+async function submitWeeklyPlanAi(){
+  const desc = document.getElementById('weekPlanInput').value.trim();
+  if(!desc){ toast('Wklej plan treningowy','error'); return; }
+
+  document.getElementById('weekAiBtn').disabled = true;
+  document.getElementById('weekAiLoading').style.display = 'block';
+
+  const prompt = `Jesteś ekspertem od treningu siłowego. Przeanalizuj poniższy plan treningowy i przypisz wszystkie ćwiczenia do konkretnych dni tygodnia.
+Klucze dni: mon=poniedziałek, tue=wtorek, wed=środa, thu=czwartek, fri=piątek, sat=sobota, sun=niedziela.
+
+Dla każdego ćwiczenia zwróć obiekt z polami:
+- nazwa: polska nazwa ćwiczenia
+- grupy_miesniowe: tablica, możliwe wartości: ["klatka","plecy","nogi","barki","biceps","triceps","brzuch","posladki","lydki","cardio"]
+- sugerowane_serie: liczba lub null
+- sugerowane_powt: liczba lub null
+- sugerowany_ciezar: liczba kg (bez jednostki) lub null
+- uwagi: string lub null
+
+Odpowiedz WYŁĄCZNIE poprawnym JSON, bez żadnego tekstu poza JSON, bez markdown, bez backticks:
+{"dni":{"mon":[...cwiczenia...],"tue":[...],"wed":[...],"thu":[...],"fri":[...],"sat":[...],"sun":[...]}}
+
+Dla dni niewymienionych w planie lub dni odpoczynku zwróć pustą tablicę [].
+
+PLAN TRENINGOWY:
+${desc}`;
+
+  try {
+    const text = await _aiCallWithFallback(prompt, null, 8192);
+    const r = _extractJSON(text);
+    if(!r.dni) throw new Error('AI nie zwróciło struktury dni');
+
+    const plan = getWeeklyPlan();
+    let total = 0;
+    WEEK_DAYS.forEach(d => {
+      const exArr = (r.dni[d.key]||[]).map(c=>({
+        nazwa: c.nazwa,
+        grupy: c.grupy_miesniowe||[],
+        emoji: EX_GROUP_EMOJI[(c.grupy_miesniowe||[])[0]]||'💪',
+        sugerowane_serie: c.sugerowane_serie||null,
+        sugerowane_powt: c.sugerowane_powt||null,
+        sugerowany_ciezar: c.sugerowany_ciezar||null,
+        uwagi: c.uwagi||null
+      }));
+      if(exArr.length){ plan[d.key] = exArr; total += exArr.length; }
+    });
+    setWeeklyPlan(plan);
+    document.getElementById('weekPlanInput').value = '';
+    renderWeeklySchedule();
+    toast(`✅ Plan gotowy! ${total} ćwiczeń rozdzielono na dni`, 'success');
+    vibrate([30,20,60]);
+  } catch(e) {
+    toast(e.message||'Błąd AI','error');
+  } finally {
+    document.getElementById('weekAiBtn').disabled = false;
+    document.getElementById('weekAiLoading').style.display = 'none';
+  }
+}
+
 /* =================== WORKOUTS =================== */
 function getWorkouts(){ try{return JSON.parse(localStorage.getItem(LS.workouts))||[]}catch(e){return[]} }
 function setWorkouts(arr){ localStorage.setItem(LS.workouts, JSON.stringify(arr)); }
@@ -3264,6 +3471,43 @@ let workoutStartTs = 0;
 let workoutTimerInterval = null;
 
 function renderWorkoutHome(){
+  // sekcja planu dnia
+  const dayPlanEl = document.getElementById('dayPlanSection');
+  if(dayPlanEl){
+    const dayInfo = typeof WEEK_DAYS !== 'undefined'
+      ? WEEK_DAYS.find(d => d.key === selectedWeekDay)
+      : null;
+    const exercises = (dayInfo && typeof getWeekDay === 'function')
+      ? getWeekDay(selectedWeekDay)
+      : [];
+
+    if(exercises.length > 0){
+      const exRows = exercises.map((ex, i) => {
+        const meta = [
+          ex.sugerowane_serie && ex.sugerowane_powt ? `${ex.sugerowane_serie}×${ex.sugerowane_powt}` : null,
+          ex.sugerowany_ciezar ? `${ex.sugerowany_ciezar}kg` : null
+        ].filter(Boolean).join(' · ');
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;${i < exercises.length-1 ? 'border-bottom:1px solid rgba(255,255,255,.05)' : ''}">
+          <span style="font-size:20px">${ex.emoji||'💪'}</span>
+          <div style="flex:1;min-width:0">
+            <div style="font-size:14px;font-weight:600">${escapeHtml(ex.nazwa)}</div>
+            ${meta ? `<div style="font-size:11px;color:var(--accent-text);font-weight:600;margin-top:1px">${escapeHtml(meta)}</div>` : ''}
+          </div>
+        </div>`;
+      }).join('');
+
+      dayPlanEl.innerHTML = `
+        <div class="section-title" style="margin-top:0">Plan na ${dayInfo.label}</div>
+        <div class="card" style="padding:4px 16px;margin-bottom:8px">${exRows}</div>
+        <button class="btn btn-primary" style="margin-bottom:12px" onclick="startDayWorkout('${selectedWeekDay}')">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          Zacznij trening
+        </button>`;
+    } else {
+      dayPlanEl.innerHTML = '';
+    }
+  }
+
   const list = document.getElementById('workoutList');
   // 1) karta aktualnie trwającego treningu na górze
   list.innerHTML = '';
@@ -3493,6 +3737,19 @@ function startWorkout(){
   workoutDraft = null;
   ensureLiveTimer();
   showScreen('workout-active');
+}
+function startDayWorkout(dayKey){
+  const exercises = getWeekDay(dayKey);
+  if(!exercises || exercises.length===0){ toast('Brak ćwiczeń w tym dniu','error'); return; }
+  workoutDraft = {
+    name: WEEK_DAYS.find(d=>d.key===dayKey)?.label || 'Trening',
+    exercises: exercises.map(e=>({nazwa: e.nazwa, grupy: e.grupy||[], emoji: e.emoji||'💪', sets: []}))
+  };
+  showScreen('workout-create');
+  setTimeout(() => {
+    document.getElementById('wkName').value = workoutDraft.name;
+    document.getElementById('wkName').focus();
+  }, 50);
 }
 function saveActiveWorkout(){
   try{ sessionStorage.setItem('cw', JSON.stringify({w:currentWorkout, ts:workoutStartTs})); }catch(e){}
@@ -4029,6 +4286,17 @@ function unlockSecretKunicki(){
 
 /* =================== INIT =================== */
 (async function init(){
+  // przywróć dane po aktualizacji
+  try {
+    const _bakRaw = sessionStorage.getItem('_kawcia_bak');
+    if(_bakRaw){
+      const _bak = JSON.parse(_bakRaw);
+      if(_bak.settings && !localStorage.getItem('cal_settings')) localStorage.setItem('cal_settings', _bak.settings);
+      if(_bak.meals    && !localStorage.getItem('cal_meals'))    localStorage.setItem('cal_meals',    _bak.meals);
+      if(_bak.plan     && !localStorage.getItem('weekly_plan'))  localStorage.setItem('weekly_plan',  _bak.plan);
+      sessionStorage.removeItem('_kawcia_bak');
+    }
+  } catch(e){ /* cicho */ }
   // SPRAWDŹ CZY CZEKA AKTUALIZACJA — podmiana całej strony na nowy HTML
   const pendingHtml = localStorage.getItem('cal_updatedHtml');
   if(pendingHtml){
