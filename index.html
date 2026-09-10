@@ -920,7 +920,8 @@
         <select class="select" id="geminiModel" data-testid="gemini-model">
           <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
           <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
-          <option value="gemini-3.1-flash-lite" selected>Gemini 3.1 Flash Lite (zalecany)</option>
+          <option value="gemini-3.5-flash-lite" selected>Gemini 3.5 Flash Lite (zalecany)</option>
+          <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite</option>
         </select>
       </div>
       <div class="row-toggle">
@@ -1521,7 +1522,7 @@ function loadSettingsForm(){
   const s = getSettings();
   document.getElementById('settingProvider').value = 'gemini';
   document.getElementById('keyGemini').value = s.keys?.gemini||'';
-  document.getElementById('geminiModel').value = s.geminiModel||'gemini-3.1-flash-lite';
+  document.getElementById('geminiModel').value = s.geminiModel||'gemini-3.5-flash-lite';
   document.getElementById('cameraLens').value = s.cameraLens||'auto';
   document.getElementById('goalCal').value = s.goalCal||'';
   document.getElementById('goalP').value = s.goalP||'';
@@ -2111,7 +2112,7 @@ function exportCSV(){
 // Apka próbuje po kolei; pierwszy działający jest cache'owany w localStorage
 // pod kluczem aimodel_<provider>. Przy 404/„not found" próbuje następnego.
 const PROVIDER_MODELS = {
-  gemini: ['gemini-3.1-flash-lite','gemini-2.5-flash','gemini-2.5-flash-lite']
+  gemini: ['gemini-3.5-flash-lite','gemini-3.1-flash-lite','gemini-2.5-flash','gemini-2.5-flash-lite']
 };
 function getCachedModel(provider){ return localStorage.getItem('aimodel_'+provider)||null; }
 function setCachedModel(provider, model){ localStorage.setItem('aimodel_'+provider, model); }
