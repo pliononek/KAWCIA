@@ -4318,8 +4318,13 @@ function unlockSecretKunicki(){
   applyTheme(getTheme());
   loadActiveWorkout();
   document.getElementById('drawerVersion').textContent = displayVer;
-  const name = getUserName();
+  // migracja: poprzedni domyślny model 3.1 -> nowy domyślny 3.5
   const s = getSettings();
+  if(s.geminiModel === 'gemini-3.1-flash-lite'){
+    s.geminiModel = 'gemini-3.5-flash-lite';
+    setSettings(s);
+  }
+  const name = getUserName();
   if(!name){
     showWelcome();
   } else if(!s.goalCal){
