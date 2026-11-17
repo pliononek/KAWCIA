@@ -1,4 +1,4 @@
-# ☕ KAWCIA – Twój Osobisty Asystent Diety
+# ☕ KAWCIA – śledzenie makro przy po mocy AI za DARMO
 
 **KAWCIA** to nowoczesna, lekka i w pełni lokalna aplikacja webowa (PWA) stworzona z myślą o urządzeniach mobilnych. Pozwala w wygodny sposób śledzić spożyte kalorie, makroskładniki oraz historię posiłków.
 
