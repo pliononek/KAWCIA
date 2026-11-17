@@ -33,7 +33,7 @@ Aplikacja używa **Google Gemini** jako dostawcy AI. Klucz API jest darmowy.
 | Model | Rola | RPM | RPD | Zdjęcia |
 |---|---|---|---|---|
 | `gemini-3.1-flash-lite` ⭐ | domyślny | 15 | 500 | ✅ |
-| `gemini-3.5-flash-lite` | fallback | — | — | ✅ |
+| `gemini-3.5-flash-lite` | fallback | 15 | 500 | ✅ |
 | `gemini-2.5-flash` | do wyboru | 5 | 20 | ✅ |
 | `gemini-2.5-flash-lite` | do wyboru | 10 | 20 | ✅ |
 
