@@ -239,13 +239,6 @@
     transition: 0.15s ease;
   }
 
-  .primary-fab-top {
-    width: 42px;
-    height: 42px;
-    padding: 0;
-    border-radius: 13px;
-  }
-
   .secondary-button {
     background: var(--surface-2);
     color: var(--ink);
@@ -1183,9 +1176,6 @@
       <button class="icon-button" onclick="toggleTheme()" id="themeToggleBtn" aria-label="Zmień motyw">
         <!-- Ikona wstrzykiwana przez JS -->
       </button>
-      <button class="primary-button primary-fab-top" onclick="openAddModal('describe')" aria-label="Dodaj posiłek">
-        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-      </button>
     </div>
   </header>
 
@@ -1283,10 +1273,6 @@
           <p class="eyebrow">Dzisiejszy dziennik</p>
           <h2>Posiłki</h2>
         </div>
-        <button class="plain-button" onclick="openAddModal('describe')">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg>
-          Dodaj
-        </button>
       </div>
       <div id="mealList"></div>
     </section>
@@ -1360,10 +1346,11 @@
       <div class="field">
         <label>Model Gemini</label>
         <select class="select" id="geminiModel">
-          <option value="gemini-2.5-flash">Gemini 2.5 Flash (zalecany)</option>
+          <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash Lite (zalecany)</option>
+          <option value="gemini-3.5-flash-lite">Gemini 3.5 Flash Lite</option>
+          <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
           <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash Lite</option>
           <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-          <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
         </select>
       </div>
       <div class="toggle-row">
@@ -1535,7 +1522,7 @@
     <!-- TAB 3: BARCODE -->
     <div id="addTab-barcode" style="display: none;">
       <div class="scanner-box">
-        <video id="barcodeVideo" playsinline></video>
+        <video id="barcodeVideo" playsinline muted></video>
         <div class="scan-frame"></div>
       </div>
       <div class="field">
@@ -1932,7 +1919,7 @@ function renderTodayMeals(meals) {
   const wrap = document.getElementById('mealList');
   wrap.innerHTML = '';
   if (!meals.length) {
-    wrap.innerHTML = `<div class="empty-state">Brak posiłków na dzisiaj. Dotknij „+ Dodaj”, aby zapisać pierwszy posiłek.</div>`;
+    wrap.innerHTML = `<div class="empty-state">Brak posiłków na dzisiaj. Dotknij „Dodaj” na dolnym pasku, aby zapisać pierwszy posiłek.</div>`;
     return;
   }
 
@@ -2033,8 +2020,8 @@ function openAddModal(tab = 'describe') {
 }
 
 function closeAddModal() {
-  stopBarcode();
   document.getElementById('addModal').classList.remove('show');
+  stopBarcode();
 }
 
 function switchAddTab(tab) {
@@ -2043,7 +2030,9 @@ function switchAddTab(tab) {
     document.getElementById('addTab-' + t).style.display = t === tab ? 'block' : 'none';
     document.getElementById('tabBtn-' + t).classList.toggle('active', t === tab);
   });
-  if (tab === 'barcode') startBarcode();
+  if (tab === 'barcode') {
+    startBarcode();
+  }
 }
 
 function renderFavChipsModal() {
@@ -2077,14 +2066,20 @@ function renderFavChipsModal() {
 }
 
 /* =================== AI ENGINE (GEMINI + OFF) =================== */
-const DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash';
-const FALLBACK_GEMINI_MODEL = 'gemini-2.0-flash';
+const DEFAULT_GEMINI_MODEL = 'gemini-3.1-flash-lite';
+const FALLBACK_GEMINI_MODEL = 'gemini-3.5-flash-lite';
 const GEMINI_MODELS = [
+  'gemini-3.1-flash-lite',
+  'gemini-3.5-flash-lite',
   'gemini-2.5-flash',
   'gemini-2.5-flash-lite',
-  'gemini-2.0-flash',
-  'gemini-1.5-flash'
+  'gemini-2.0-flash'
 ];
+const GEMINI_MODEL_ALIASES = {
+  'gemini-3.1-flash-lite': ['gemini-3.1-flash-lite-preview', 'gemini-3.1-flash-lite'],
+  'gemini-3.5-flash-lite': ['gemini-3.5-flash-lite-preview', 'gemini-3.5-flash-lite']
+};
+
 function expandModelCandidates(preferred) {
   const ordered = [
     preferred,
@@ -2093,7 +2088,11 @@ function expandModelCandidates(preferred) {
   ];
   const expanded = [];
   for (const m of ordered) {
-    if (m && !expanded.includes(m)) expanded.push(m);
+    if (!m) continue;
+    const variants = GEMINI_MODEL_ALIASES[m] || [m];
+    for (const v of variants) {
+      if (!expanded.includes(v)) expanded.push(v);
+    }
   }
   return expanded;
 }
@@ -2315,9 +2314,23 @@ async function submitPhoto() {
   }
 }
 
-/* ---- 3. BARCODE SCANNER ---- */
+/* ---- 3. BARCODE SCANNER (STRICT CAMERA LIFECYCLE) ---- */
 let codeReader = null;
+let barcodeStream = null;
+let barcodeSession = 0;
 let barcodeLocked = false;
+
+function isBarcodeTabActive() {
+  const modal = document.getElementById('addModal');
+  const barcodeTab = document.getElementById('addTab-barcode');
+  return Boolean(
+    modal &&
+    modal.classList.contains('show') &&
+    barcodeTab &&
+    barcodeTab.style.display !== 'none' &&
+    !document.hidden
+  );
+}
 
 async function loadZXing() {
   if (window.ZXing) return true;
@@ -2331,39 +2344,85 @@ async function loadZXing() {
 }
 
 async function startBarcode() {
+  stopBarcode();
+  const mySession = ++barcodeSession;
+
+  if (!isBarcodeTabActive()) return;
   if (!(await loadZXing())) {
-    toast('Biblioteka skanera niedostępna', 'error');
+    if (mySession === barcodeSession) toast('Biblioteka skanera niedostępna', 'error');
     return;
   }
-  const barcodeTab = document.getElementById('addTab-barcode');
-  const modal = document.getElementById('addModal');
-  if (!modal.classList.contains('show') || barcodeTab.style.display === 'none') return;
+  if (mySession !== barcodeSession || !isBarcodeTabActive()) return;
+
   barcodeLocked = false;
   try {
-    codeReader = new ZXing.BrowserMultiFormatReader();
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { facingMode: { ideal: 'environment' } },
+      audio: false
+    });
+
+    if (mySession !== barcodeSession || !isBarcodeTabActive()) {
+      stream.getTracks().forEach(t => t.stop());
+      return;
+    }
+
+    barcodeStream = stream;
     const video = document.getElementById('barcodeVideo');
-    codeReader.decodeFromConstraints(
-      { video: { facingMode: { ideal: 'environment' } } },
-      video,
-      (result) => {
-        if (result && !barcodeLocked) {
-          barcodeLocked = true;
-          vibrate(25);
-          const code = result.getText();
-          stopBarcode();
-          lookupBarcode(code);
-        }
+    codeReader = new ZXing.BrowserMultiFormatReader();
+
+    codeReader.decodeFromStream(stream, video, (result) => {
+      if (!isBarcodeTabActive() || mySession !== barcodeSession) {
+        stopBarcode();
+        return;
       }
-    );
+      if (result && !barcodeLocked) {
+        barcodeLocked = true;
+        vibrate(25);
+        const code = result.getText();
+        stopBarcode();
+        lookupBarcode(code);
+      }
+    });
   } catch (e) {
-    toast('Brak dostępu do kamery', 'error');
+    stopBarcode();
+    if (mySession === barcodeSession && isBarcodeTabActive()) {
+      toast('Brak dostępu do kamery', 'error');
+    }
   }
 }
 
 function stopBarcode() {
-  try { if (codeReader) codeReader.reset(); } catch {}
+  barcodeSession++;
+  try {
+    if (codeReader) codeReader.reset();
+  } catch {}
   codeReader = null;
+
+  if (barcodeStream) {
+    try {
+      barcodeStream.getTracks().forEach(t => t.stop());
+    } catch {}
+    barcodeStream = null;
+  }
+
+  const video = document.getElementById('barcodeVideo');
+  if (video) {
+    try {
+      if (video.srcObject && video.srcObject.getTracks) {
+        video.srcObject.getTracks().forEach(t => t.stop());
+      }
+      video.pause();
+      video.srcObject = null;
+      video.removeAttribute('src');
+      video.load();
+    } catch {}
+  }
 }
+
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) stopBarcode();
+});
+window.addEventListener('pagehide', stopBarcode);
 
 function submitManualBarcode() {
   const code = document.getElementById('manualBarcode').value.trim();
