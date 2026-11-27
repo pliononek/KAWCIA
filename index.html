@@ -36,7 +36,7 @@
     return 0;
   }
   try {
-    var appVersion = '2.0.0';
+    var appVersion = '2.1.2';
     var pendingHtml = localStorage.getItem('cal_updatedHtml');
     var targetVer = localStorage.getItem('cal_currentVersion');
     if (pendingHtml && targetVer && verCmp(targetVer, appVersion) > 0 && !window.__kawciaInjected) {
@@ -1420,7 +1420,7 @@
       <h2 style="margin-bottom: 14px;">Aktualizacje</h2>
       <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0; font-size: 13px; color: var(--muted);">
         <span>Obecna wersja</span>
-        <span style="font-weight: 700; color: var(--ink);" id="currentVersionDisplay">v2.0.0</span>
+        <span style="font-weight: 700; color: var(--ink);" id="currentVersionDisplay">v2.1.2</span>
       </div>
       <div style="display: flex; align-items: center; justify-content: space-between; padding: 4px 0 12px; font-size: 13px; color: var(--muted);">
         <span>Najnowsza wersja</span>
@@ -1460,7 +1460,7 @@
     </div>
 
     <div style="text-align: center; padding: 12px 4px; font-size: 11px; color: var(--muted);">
-      v<span id="settingsVersion">2.0.0</span>
+      v<span id="settingsVersion">2.1.2</span>
       <span style="margin: 0 6px;">·</span>
       <span id="settingsVerSource">APP_VERSION</span>
     </div>
@@ -1677,7 +1677,7 @@
 if (window.__kawciaUpdating) return;
 
 /* =================== STORAGE & STATE =================== */
-const APP_VERSION = '2.0.0';
+const APP_VERSION = '2.1.2';
 const APP_REPO = 'pliononek/KAWCIA';
 const APP_RAW_URL = 'https://raw.githubusercontent.com/' + APP_REPO + '/main/index.html';
 const APP_API_RELEASES = 'https://api.github.com/repos/' + APP_REPO + '/releases/latest';
