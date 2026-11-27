@@ -7,11 +7,60 @@
   pisemnej zgody autora są zabronione. Forki MUSZĄ podmienić Ikonę
   przed publikacją. Szczegóły w pliku LICENSE.
 -->
-<html lang="pl" data-theme="light">
+<html lang="pl" data-theme="dark">
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
-<meta name="theme-color" id="metaThemeColor" content="#f6f7f3" />
+<meta name="theme-color" id="metaThemeColor" content="#0d110e" />
+<script>
+(function () {
+  try {
+    if (localStorage.getItem('cal_theme_mode') === 'light') {
+      document.documentElement.setAttribute('data-theme', 'light');
+      var meta = document.getElementById('metaThemeColor');
+      if (meta) meta.setAttribute('content', '#f6f7f3');
+    }
+  } catch (e) {}
+})();
+</script>
+<script>
+(function () {
+  function verCmp(a, b) {
+    var pa = String(a).replace(/^v/i, '').split('.').map(Number);
+    var pb = String(b).replace(/^v/i, '').split('.').map(Number);
+    for (var i = 0; i < Math.max(pa.length, pb.length); i++) {
+      var na = pa[i] || 0, nb = pb[i] || 0;
+      if (na > nb) return 1;
+      if (na < nb) return -1;
+    }
+    return 0;
+  }
+  try {
+    var appVersion = '2.0.0';
+    var pendingHtml = localStorage.getItem('cal_updatedHtml');
+    var targetVer = localStorage.getItem('cal_currentVersion');
+    if (pendingHtml && targetVer && verCmp(targetVer, appVersion) > 0 && !window.__kawciaInjected) {
+      window.__kawciaInjected = true;
+      window.__kawciaUpdating = true;
+      var applyUpdate = function () {
+        setTimeout(function () {
+          window.__kawciaUpdating = false;
+          document.open();
+          document.write(pendingHtml);
+          document.close();
+        }, 0);
+      };
+      if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', applyUpdate, { once: true });
+      } else {
+        applyUpdate();
+      }
+    } else if (pendingHtml && !window.__kawciaInjected) {
+      localStorage.removeItem('cal_updatedHtml');
+    }
+  } catch (e) {}
+})();
+</script>
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 <meta name="apple-mobile-web-app-title" content="KAWCIA" />
@@ -1624,6 +1673,9 @@
 <div class="toast-wrap" id="toastWrap"></div>
 
 <script>
+(function () {
+if (window.__kawciaUpdating) return;
+
 /* =================== STORAGE & STATE =================== */
 const APP_VERSION = '2.0.0';
 const APP_REPO = 'pliononek/KAWCIA';
@@ -1714,7 +1766,7 @@ function submitWelcomeName() {
 function getTheme() {
   const saved = localStorage.getItem(LS.theme);
   if (saved === 'dark' || saved === 'light') return saved;
-  return window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  return 'dark';
 }
 
 function applyTheme(mode) {
@@ -2948,6 +3000,34 @@ async function autoUpdateCheck() {
   } catch (e) {}
 }
 
+Object.assign(window, {
+  toggleTheme,
+  showScreen,
+  exportCSV,
+  setTheme,
+  saveSettings,
+  saveAutoUpdateToggle,
+  checkForUpdates,
+  installUpdate,
+  clearAllData,
+  openAddModal,
+  closeAddModal,
+  switchAddTab,
+  submitText,
+  onPhotoSelected,
+  submitPhoto,
+  submitManualBarcode,
+  updateManualPreview,
+  submitManual,
+  closePortionModal,
+  onPortionInputChange,
+  savePortionModal,
+  submitWelcomeName,
+  openEditMealPortion,
+  onToggleFav,
+  deleteMeal
+});
+
 /* =================== INIT =================== */
 (function init() {
   if ('serviceWorker' in navigator) {
@@ -2968,19 +3048,6 @@ async function autoUpdateCheck() {
     }
   } catch (e) {}
 
-  // SPRAWDŹ CZY CZEKA AKTUALIZACJA — podmiana całej strony na nowy HTML
-  const pendingHtml = localStorage.getItem('cal_updatedHtml');
-  const targetVer = localStorage.getItem('cal_currentVersion');
-  if (pendingHtml && targetVer && _verCmp(targetVer, APP_VERSION) > 0 && !window.__kawciaInjected) {
-    window.__kawciaInjected = true;
-    document.open();
-    document.write(pendingHtml);
-    document.close();
-    return;
-  } else if (pendingHtml && !window.__kawciaInjected) {
-    localStorage.removeItem('cal_updatedHtml');
-  }
-
   const savedVer = localStorage.getItem('cal_currentVersion');
   if (!savedVer || _verCmp(APP_VERSION, savedVer) >= 0) {
     localStorage.setItem('cal_currentVersion', APP_VERSION);
@@ -2997,6 +3064,7 @@ async function autoUpdateCheck() {
     openWelcomeNameModal();
   }
   setTimeout(autoUpdateCheck, 3000);
+})();
 })();
 </script>
 </body>
